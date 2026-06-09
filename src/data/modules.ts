@@ -1,0 +1,440 @@
+import {
+  LayoutDashboard, Database, Factory, Warehouse, ShoppingCart,
+  Wrench, Shield, TriangleAlert, Users,
+  FileText, Building2, GitBranch, BarChart3,
+  Brain, Store, Blocks, Bot,
+  Settings, Activity, Cpu, Gauge, ClipboardList, Key, Globe, Link
+} from 'lucide-react';
+
+export interface ModuleDef {
+  id: string;
+  title: string;
+  titleEn: string;
+  icon: any;
+  color: string;
+  description: string;
+  pages: PageDef[];
+  category: 'phase1' | 'operations' | 'supply' | 'support' | 'intelligence';
+}
+
+export interface PageDef {
+  id: string;
+  title: string;
+  icon: any;
+}
+
+export const modules: ModuleDef[] = [
+  // Phase 1 - Core Modules
+  {
+    id: 'core',
+    title: 'هسته پلتفرم',
+    titleEn: 'Core Platform',
+    icon: Settings,
+    color: '#3b82f6',
+    description: 'مدیریت کاربران، نقش‌ها و تنظیمات',
+    category: 'phase1',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'users', title: 'کاربران', icon: Users },
+      { id: 'roles', title: 'نقش‌ها', icon: Shield },
+      { id: 'audit', title: 'لاگ فعالیت', icon: Activity },
+      { id: 'notifications', title: 'اعلان‌ها', icon: TriangleAlert },
+      { id: 'files', title: 'فایل‌ها', icon: FileText },
+      { id: 'theme', title: 'ظاهر', icon: Settings },
+    ],
+  },
+  {
+    id: 'superadmin',
+    title: 'مدیریت ارشد',
+    titleEn: 'Super Admin',
+    icon: Key,
+    color: '#f59e0b',
+    description: 'مدیریت کارخانه‌ها و لایسنس‌ها',
+    category: 'phase1',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'tenants', title: 'کارخانه‌ها', icon: Building2 },
+      { id: 'licenses', title: 'لایسنس‌ها', icon: Key },
+      { id: 'modules', title: 'ماژول‌ها', icon: Blocks },
+      { id: 'health', title: 'سلامت سیستم', icon: Activity },
+      { id: 'marketplace', title: 'مارکت‌پلیس', icon: Store },
+    ],
+  },
+  {
+    id: 'org',
+    title: 'ساختار سازمانی',
+    titleEn: 'Organization Engine',
+    icon: Building2,
+    color: '#8b5cf6',
+    description: 'چارت سازمانی و درخت تأیید',
+    category: 'phase1',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'departments', title: 'واحدها', icon: Building2 },
+      { id: 'positions', title: 'پست‌ها', icon: Users },
+      { id: 'chart', title: 'چارت سازمانی', icon: GitBranch },
+      { id: 'approval', title: 'درخت تأیید', icon: ClipboardList },
+      { id: 'escalation', title: 'اسکالیشن', icon: TriangleAlert },
+    ],
+  },
+  {
+    id: 'workflow',
+    title: 'موتور گردش کار',
+    titleEn: 'Workflow Engine',
+    icon: GitBranch,
+    color: '#10b981',
+    description: 'فرآیندها، وظایف و تأییدات',
+    category: 'phase1',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'workflows', title: 'گردش کارها', icon: GitBranch },
+      { id: 'instances', title: 'نمونه‌ها', icon: Activity },
+      { id: 'tasks', title: 'وظایف', icon: ClipboardList },
+      { id: 'approvals', title: 'تأییدات', icon: Shield },
+    ],
+  },
+  {
+    id: 'dashboard-builder',
+    title: 'داشبوردساز',
+    titleEn: 'Dashboard Builder',
+    icon: BarChart3,
+    color: '#ec4899',
+    description: 'ساخت داشبوردهای سفارشی',
+    category: 'phase1',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'builder', title: 'ساختن', icon: BarChart3 },
+      { id: 'widgets', title: 'ویجت‌ها', icon: Blocks },
+      { id: 'templates', title: 'قالب‌ها', icon: FileText },
+      { id: 'mydashboards', title: 'داشبوردهای من', icon: LayoutDashboard },
+    ],
+  },
+
+  // Future Phases - Operations
+  {
+    id: 'idp',
+    title: 'پلتفرم داده صنعتی',
+    titleEn: 'Industrial Data Platform',
+    icon: Database,
+    color: '#8b5cf6',
+    description: 'مرکز داده صنعتی و اتصال سخت‌افزار',
+    category: 'operations',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'devices', title: 'دستگاه‌ها', icon: Cpu },
+      { id: 'plcs', title: 'PLCها', icon: Database },
+      { id: 'tags', title: 'تگ‌ها', icon: Activity },
+      { id: 'historian', title: 'تاریخچه', icon: BarChart3 },
+      { id: 'formulas', title: 'فرمول‌ها', icon: GitBranch },
+      { id: 'events', title: 'رویدادها', icon: TriangleAlert },
+    ],
+  },
+  {
+    id: 'mes',
+    title: 'مدیریت تولید',
+    titleEn: 'Production Center (MES)',
+    icon: Factory,
+    color: '#10b981',
+    description: 'سیستم اجرای تولید',
+    category: 'operations',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'orders', title: 'سفارشات', icon: ClipboardList },
+      { id: 'lines', title: 'خطوط', icon: Factory },
+      { id: 'oee', title: 'OEE', icon: Gauge },
+      { id: 'downtime', title: 'توقفات', icon: TriangleAlert },
+      { id: 'scrap', title: 'ضایعات', icon: Wrench },
+      { id: 'monitoring', title: 'مانیتورینگ زنده', icon: Activity },
+      { id: 'shifts', title: 'شیفت‌ها', icon: Users },
+      { id: 'entry', title: 'ثبت تولید', icon: ClipboardList },
+      { id: 'incidents', title: 'حوادث خط', icon: TriangleAlert },
+    ],
+  },
+  {
+    id: 'alerts',
+    title: 'مرکز هشدار',
+    titleEn: 'Alert Center',
+    icon: TriangleAlert,
+    color: '#ef4444',
+    description: 'مدیریت هشدارهای کارخانه',
+    category: 'operations',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'active', title: 'هشدارهای فعال', icon: TriangleAlert },
+      { id: 'templates', title: 'قالب‌ها', icon: ClipboardList },
+      { id: 'escalation', title: 'اسکالیشن', icon: GitBranch },
+      { id: 'history', title: 'تاریخچه', icon: Activity },
+      { id: 'analytics', title: 'آنالیز', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'incidents',
+    title: 'موتور حوادث',
+    titleEn: 'Incident Engine',
+    icon: Wrench,
+    color: '#f97316',
+    description: 'مدیریت خطاها و خرابی‌ها',
+    category: 'operations',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'active', title: 'حوادث فعال', icon: TriangleAlert },
+      { id: 'templates', title: 'قالب‌ها', icon: ClipboardList },
+      { id: 'rca', title: 'ریشه‌یابی', icon: GitBranch },
+      { id: 'analytics', title: 'آنالیز', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'command-center',
+    title: 'اتاق فرمان',
+    titleEn: 'Command Center',
+    icon: LayoutDashboard,
+    color: '#06b6d4',
+    description: 'داشبورد اجرایی کل کارخانه',
+    category: 'operations',
+    pages: [
+      { id: 'executive', title: 'داشبورد اجرایی', icon: LayoutDashboard },
+      { id: 'live', title: 'مانیتورینگ زنده', icon: Activity },
+      { id: 'reports', title: 'گزارش‌های اجرایی', icon: ClipboardList },
+      { id: 'ai-assistant', title: 'دستیار AI', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'cmms',
+    title: 'نگهداری و تعمیرات',
+    titleEn: 'CMMS + EAM',
+    icon: Wrench,
+    color: '#dc2626',
+    description: 'مدیریت دارایی‌ها و تعمیرات',
+    category: 'operations',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'assets', title: 'تجهیزات', icon: Cpu },
+      { id: 'workorders', title: 'دستور کار', icon: ClipboardList },
+      { id: 'pm', title: 'نت پیشگیرانه', icon: Activity },
+      { id: 'kpis', title: 'KPIها', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'qms',
+    title: 'کنترل کیفیت',
+    titleEn: 'Quality Management',
+    icon: Shield,
+    color: '#22c55e',
+    description: 'کنترل کیفیت زنجیره تولید',
+    category: 'operations',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'inspections', title: 'بازرسی‌ها', icon: ClipboardList },
+      { id: 'ncr', title: 'عدم انطباق', icon: TriangleAlert },
+      { id: 'capa', title: 'CAPA', icon: Shield },
+      { id: 'analytics', title: 'تحلیل', icon: BarChart3 },
+    ],
+  },
+  
+  // Supply Chain
+  {
+    id: 'wms',
+    title: 'مدیریت انبار',
+    titleEn: 'Warehouse Management',
+    icon: Warehouse,
+    color: '#f59e0b',
+    description: 'کنترل کامل موجودی از ورود تا مصرف',
+    category: 'supply',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'items', title: 'کالاها', icon: Warehouse },
+      { id: 'receiving', title: 'ورود کالا', icon: ClipboardList },
+      { id: 'issue', title: 'صدور کالا', icon: Activity },
+      { id: 'locations', title: 'مکان‌ها', icon: Building2 },
+      { id: 'expiry', title: 'انقضا', icon: TriangleAlert },
+    ],
+  },
+  {
+    id: 'srm',
+    title: 'تأمین و خرید',
+    titleEn: 'Procurement & SRM',
+    icon: ShoppingCart,
+    color: '#06b6d4',
+    description: 'مدیریت تأمین‌کنندگان و سفارشات خرید',
+    category: 'supply',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'suppliers', title: 'تأمین‌کنندگان', icon: Users },
+      { id: 'requests', title: 'درخواست خرید', icon: ClipboardList },
+      { id: 'orders', title: 'سفارشات', icon: ShoppingCart },
+      { id: 'evaluation', title: 'ارزیابی', icon: BarChart3 },
+    ],
+  },
+
+  // Support
+  {
+    id: 'hse',
+    title: 'ایمنی و بهداشت',
+    titleEn: 'HSE',
+    icon: Shield,
+    color: '#eab308',
+    description: 'ایمنی، بهداشت و محیط زیست',
+    category: 'support',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'incidents', title: 'حوادث', icon: TriangleAlert },
+      { id: 'risks', title: 'ارزیابی ریسک', icon: Shield },
+      { id: 'permits', title: 'مجوز کار', icon: FileText },
+      { id: 'ppe', title: 'PPE', icon: Users },
+    ],
+  },
+  {
+    id: 'hrm',
+    title: 'منابع انسانی',
+    titleEn: 'Human Resources',
+    icon: Users,
+    color: '#ec4899',
+    description: 'مدیریت کامل نیروی انسانی',
+    category: 'support',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'employees', title: 'کارکنان', icon: Users },
+      { id: 'attendance', title: 'حضور و غیاب', icon: Activity },
+      { id: 'training', title: 'آموزش', icon: BarChart3 },
+      { id: 'competency', title: 'شایستگی', icon: BarChart3 },
+    ],
+  },
+  {
+    id: 'dms',
+    title: 'مدیریت اسناد',
+    titleEn: 'Document Management',
+    icon: FileText,
+    color: '#64748b',
+    description: 'کارخانه بدون کاغذ',
+    category: 'support',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'documents', title: 'مستندات', icon: FileText },
+      { id: 'letters', title: 'نامه‌ها', icon: FileText },
+    ],
+  },
+  {
+    id: 'finance',
+    title: 'مالی',
+    titleEn: 'Finance ERP',
+    icon: BarChart3,
+    color: '#14b8a6',
+    description: 'مدیریت مالی و حسابداری',
+    category: 'support',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'ledger', title: 'دفتر کل', icon: FileText },
+      { id: 'payable', title: 'پرداختنی', icon: BarChart3 },
+      { id: 'receivable', title: 'دریافتنی', icon: BarChart3 },
+      { id: 'budget', title: 'بودجه', icon: BarChart3 },
+    ],
+  },
+
+  // Quality & Lab (Phase 3)
+  {
+    id: 'lims',
+    title: 'آزمایشگاه',
+    titleEn: 'Laboratory (LIMS)',
+    icon: Shield,
+    color: '#a855f7',
+    description: 'مدیریت نمونه‌ها، آزمون‌ها و SPC',
+    category: 'support',
+    pages: [
+      { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
+      { id: 'samples', title: 'نمونه‌ها', icon: ClipboardList },
+      { id: 'spc', title: 'SPC', icon: BarChart3 },
+      { id: 'coa', title: 'COA', icon: FileText },
+    ],
+  },
+
+  // Intelligence
+  {
+    id: 'ai',
+    title: 'هوش مصنوعی',
+    titleEn: 'AI Copilot & Factory Brain',
+    icon: Brain,
+    color: '#d946ef',
+    description: 'دستیار هوشمند و عامل‌های AI',
+    category: 'intelligence',
+    pages: [
+      { id: 'dashboard', title: 'AI Copilot', icon: LayoutDashboard },
+      { id: 'agents', title: 'عامل‌های AI', icon: Bot },
+      { id: 'prompts', title: 'قالب‌های تحلیل', icon: Brain },
+    ],
+  },
+  {
+    id: 'report-builder',
+    title: 'گزارش‌ساز',
+    titleEn: 'Report Builder',
+    icon: BarChart3,
+    color: '#0891b2',
+    description: 'ساخت و زمانبندی گزارش‌ها',
+    category: 'intelligence',
+    pages: [
+      { id: 'dashboard', title: 'گزارش‌ها', icon: LayoutDashboard },
+    ],
+  },
+  {
+    id: 'form-builder',
+    title: 'فرم‌ساز',
+    titleEn: 'Form Builder',
+    icon: ClipboardList,
+    color: '#84cc16',
+    description: 'ساخت فرم بدون کد',
+    category: 'intelligence',
+    pages: [
+      { id: 'dashboard', title: 'فرم‌ها', icon: LayoutDashboard },
+    ],
+  },
+  {
+    id: 'marketplace',
+    title: 'مارکت‌پلیس',
+    titleEn: 'Marketplace',
+    icon: Store,
+    color: '#f472b6',
+    description: 'افزونه‌ها و پک‌های صنعتی',
+    category: 'intelligence',
+    pages: [
+      { id: 'dashboard', title: 'مرور', icon: LayoutDashboard },
+    ],
+  },
+  {
+    id: 'nocode',
+    title: 'سازنده بدون کد',
+    titleEn: 'No-Code Builder',
+    icon: Blocks,
+    color: '#06b6d4',
+    description: 'ساخت ماژول بدون برنامه‌نویسی',
+    category: 'intelligence',
+    pages: [
+      { id: 'dashboard', title: 'سازنده‌ها', icon: LayoutDashboard },
+    ],
+  },
+
+  // System
+  {
+    id: 'settings',
+    title: 'تنظیمات',
+    titleEn: 'Settings',
+    icon: Settings,
+    color: '#64748b',
+    description: 'تنظیمات سیستم، کاربران و یکپارچه‌سازی',
+    category: 'phase1',
+    pages: [
+      { id: 'general', title: 'تنظیمات عمومی', icon: Settings },
+      { id: 'users', title: 'کاربران', icon: Users },
+      { id: 'roles', title: 'نقش‌ها', icon: Shield },
+      { id: 'audit', title: 'لاگ فعالیت', icon: Activity },
+      { id: 'licenses', title: 'لایسنس‌ها', icon: Key },
+      { id: 'integrations', title: 'یکپارچه‌سازی', icon: Link },
+    ],
+  },
+];
+
+export const moduleCategories = [
+  { id: 'phase1', title: '🏗️ فاز ۱ - هسته', color: '#3b82f6' },
+  { id: 'operations', title: '⚙️ عملیات', color: '#10b981' },
+  { id: 'supply', title: '📦 زنجیره تأمین', color: '#f59e0b' },
+  { id: 'support', title: '👥 پشتیبانی', color: '#ec4899' },
+  { id: 'intelligence', title: '🧠 هوشمندسازی', color: '#8b5cf6' },
+];

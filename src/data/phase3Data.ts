@@ -1,0 +1,103 @@
+import { uid } from '@/services/dataService';
+import type { Item, GRN, StockIssue, Supplier, PurchaseRequest, PurchaseOrder, Asset, WorkOrder, PMSchedule, Inspection, NCR, CAPA, Sample, SPCData, TraceEntry } from '@/types/phase3';
+
+function makeTrace(itemId: string, itemName: string): TraceEntry[] {
+  return [
+    { id:'T-'+uid(), itemId, itemName, action:'receive', personName:'محمد کریمی', personRole:'انباردار', timestamp:'1403/09/15 10:30', qty:500, balanceAfter:500, location:'A-01-03', notes:'رسید اولیه' },
+    { id:'T-'+uid(), itemId, itemName, action:'issue', personName:'رضا حسینی', personRole:'اپراتور تولید', timestamp:'1403/09/20 14:15', qty:50, balanceAfter:450, location:'خط تولید ۱', notes:'مصرف در تولید' },
+  ];
+}
+
+export const items: Item[] = [
+  { id:'I-001',code:'RM-AL-001',name:'ورق آلومینیوم ۲mm',category:'raw_material',subCategory:'آلومینیوم',unit:'کیلوگرم',brand:'آلومینیوم ایران',barcode:'4901234567890',minStock:200,maxStock:2000,reorderPoint:300,leadTime:7,currentStock:450,reservedStock:50,availableStock:400,unitCost:850000,totalValue:382500000,warehouseId:'WH-001',locationCode:'A-01-03',status:'active',lastReceived:'1403/10/01',lastIssued:'1403/10/02',grade:'A',source:'purchased',qrData:'',traceLog:makeTrace('I-001','ورق آلومینیوم ۲mm') },
+  { id:'I-002',code:'RM-ST-001',name:'میلگرد فولادی ۱۲mm',category:'raw_material',subCategory:'فولاد',unit:'شاخه',minStock:150,maxStock:1000,reorderPoint:200,leadTime:5,currentStock:120,reservedStock:30,availableStock:90,unitCost:1200000,totalValue:144000000,warehouseId:'WH-001',locationCode:'B-02-01',status:'active',lastIssued:'1403/10/02',grade:'B',source:'purchased',qrData:'',traceLog:makeTrace('I-002','میلگرد فولادی ۱۲mm') },
+  { id:'I-003',code:'SP-BRG-001',name:'بلبرینگ 6205',category:'spare_parts',subCategory:'بلبرینگ',unit:'عدد',brand:'SKF',partNumber:'6205-2RS',barcode:'7890123456789',minStock:50,maxStock:500,reorderPoint:80,leadTime:14,currentStock:85,reservedStock:0,availableStock:85,unitCost:450000,totalValue:38250000,warehouseId:'WH-002',locationCode:'C-01-05',status:'active',grade:'A+',source:'purchased',qrData:'',traceLog:makeTrace('I-003','بلبرینگ 6205') },
+  { id:'I-004',code:'CN-OIL-001',name:'روغن هیدرولیک ISO 46',category:'consumables',subCategory:'روانکار',unit:'لیتر',brand:'Shell',model:'Tellus S2 M 46',minStock:100,maxStock:500,reorderPoint:150,leadTime:3,currentStock:30,reservedStock:0,availableStock:30,unitCost:250000,totalValue:7500000,warehouseId:'WH-002',locationCode:'D-03-02',status:'near_expiry',expiryDate:'1403/12/01',grade:'B',source:'purchased',qrData:'',traceLog:makeTrace('I-004','روغن هیدرولیک ISO 46') },
+  { id:'I-005',code:'FG-A45-001',name:'قطعه آلومینیومی A45',category:'finished_goods',subCategory:'قطعات',unit:'عدد',minStock:500,maxStock:10000,reorderPoint:1000,leadTime:0,currentStock:2400,reservedStock:800,availableStock:1600,unitCost:350000,totalValue:840000000,warehouseId:'WH-003',locationCode:'E-01-01',status:'active',grade:'A',source:'production',qrData:'',traceLog:makeTrace('I-005','قطعه آلومینیومی A45') },
+  { id:'I-006',code:'SP-FLT-001',name:'فیلتر روغن هیدرولیک',category:'spare_parts',subCategory:'فیلتر',unit:'عدد',brand:'Parker',minStock:20,maxStock:100,reorderPoint:30,leadTime:10,currentStock:12,reservedStock:2,availableStock:10,unitCost:1800000,totalValue:21600000,warehouseId:'WH-002',locationCode:'C-02-08',status:'active',grade:'A',source:'purchased',qrData:'',traceLog:makeTrace('I-006','فیلتر روغن هیدرولیک') },
+  { id:'I-007',code:'SE-GLV-001',name:'دستکش ایمنی ضد حرارت',category:'safety_equipment',subCategory:'PPE',unit:'جفت',minStock:30,maxStock:200,reorderPoint:50,leadTime:7,currentStock:45,reservedStock:0,availableStock:45,unitCost:180000,totalValue:8100000,warehouseId:'WH-002',locationCode:'F-01-01',status:'active',grade:'C',source:'purchased',qrData:'',traceLog:makeTrace('I-007','دستکش ایمنی ضد حرارت') },
+  { id:'I-008',code:'CH-SOL-001',name:'حلال صنعتی',category:'chemicals',subCategory:'حلال',unit:'لیتر',shelfLife:365,minStock:50,maxStock:300,reorderPoint:80,leadTime:5,currentStock:120,reservedStock:0,availableStock:120,unitCost:95000,totalValue:11400000,warehouseId:'WH-002',locationCode:'G-01-01',status:'active',expiryDate:'1404/06/15',grade:'A',source:'depot_transfer',qrData:'',traceLog:makeTrace('I-008','حلال صنعتی') },
+];
+
+export const grns: GRN[] = [
+  { id:'GRN-001',grnNumber:'GRN-2024-0156',supplierId:'SUP-001',supplierName:'فولاد مبارکه',poNumber:'PO-2024-0089',vehiclePlate:'۱۲ ب ۳۴۵ - ۶۷',driverName:'محمد رضایی',receivedDate:'1403/10/01',totalItems:2,inspectorId:'U-003',inspectorName:'محمد کریمی',status:'approved',items:[{itemId:'I-001',itemName:'ورق آلومینیوم ۲mm',orderedQty:500,receivedQty:500,acceptedQty:495,rejectedQty:5,locationCode:'A-01-03'},{itemId:'I-002',itemName:'میلگرد فولادی ۱۲mm',orderedQty:200,receivedQty:200,acceptedQty:198,rejectedQty:2,locationCode:'B-02-01'}]},
+  { id:'GRN-002',grnNumber:'GRN-2024-0157',supplierId:'SUP-003',supplierName:'قطعات صنعتی پارس',receivedDate:'1403/10/02',totalItems:1,inspectorId:'U-003',inspectorName:'محمد کریمی',status:'pending_qc',items:[{itemId:'I-003',itemName:'بلبرینگ 6205',orderedQty:100,receivedQty:100,acceptedQty:0,rejectedQty:0,locationCode:'C-01-05'}]},
+];
+
+export const stockIssues: StockIssue[] = [
+  { id:'SI-001',issueNumber:'SI-2024-0234',requesterId:'U-008',requesterName:'مهدی صادقی',department:'نگهداری',itemId:'I-004',itemName:'روغن هیدرولیک ISO 46',qty:20,workOrderId:'WO-002',status:'approved',requestDate:'1403/10/02',issueDate:'1403/10/02' },
+  { id:'SI-002',issueNumber:'SI-2024-0235',requesterId:'U-005',requesterName:'رضا حسینی',department:'تولید',itemId:'I-001',itemName:'ورق آلومینیوم ۲mm',qty:50,status:'pending',requestDate:'1403/10/02' },
+];
+
+export const suppliers: Supplier[] = [
+  { id:'SUP-001',code:'S-001',name:'فولاد مبارکه اصفهان',contactPerson:'احمد رضایی',phone:'03133335555',email:'sales@mobarakeh.ir',address:'اصفهان',city:'اصفهان',category:'مواد اولیه',rating:4.5,qualityScore:97,deliveryScore:92,priceScore:85,status:'active',totalOrders:45,totalValue:12500000000,onTimeRate:92 },
+  { id:'SUP-002',code:'S-002',name:'آلومینیوم ایران (ایرالکو)',contactPerson:'رضا محمدی',phone:'08633332222',email:'sales@iralco.ir',address:'اراک',city:'اراک',category:'مواد اولیه',rating:4.2,qualityScore:95,deliveryScore:88,priceScore:82,status:'active',totalOrders:32,totalValue:8700000000,onTimeRate:88 },
+  { id:'SUP-003',code:'S-003',name:'قطعات صنعتی پارس',contactPerson:'علی حسینی',phone:'02144441111',email:'info@parsindustrial.ir',address:'تهران',city:'تهران',category:'قطعات یدکی',rating:3.8,qualityScore:90,deliveryScore:78,priceScore:88,status:'active',totalOrders:67,totalValue:4200000000,onTimeRate:78 },
+  { id:'SUP-004',code:'S-004',name:'شیمیایی پارسیان',contactPerson:'مریم نوری',phone:'02155556666',email:'info@parsianchemical.ir',address:'تهران',city:'تهران',category:'مصرفی',rating:4.0,qualityScore:93,deliveryScore:85,priceScore:90,status:'active',totalOrders:23,totalValue:1800000000,onTimeRate:85 },
+];
+
+export const purchaseRequests: PurchaseRequest[] = [
+  { id:'PR-001',prNumber:'PR-2024-0445',departmentId:'D-006',departmentName:'نگهداری',requesterId:'U-008',requesterName:'مهدی صادقی',priority:'high',items:[{itemId:'I-004',itemName:'روغن هیدرولیک ISO 46',qty:200,unit:'لیتر',estimatedCost:50000000,reason:'موجودی بحرانی'}],totalEstimate:50000000,status:'pending',requestDate:'1403/10/02' },
+  { id:'PR-002',prNumber:'PR-2024-0446',departmentId:'D-006',departmentName:'نگهداری',requesterId:'U-008',requesterName:'مهدی صادقی',priority:'medium',items:[{itemId:'I-006',itemName:'فیلتر روغن هیدرولیک',qty:20,unit:'عدد',estimatedCost:36000000,reason:'ذخیره سازی'}],totalEstimate:36000000,status:'approved',approvedBy:'محمد کریمی',requestDate:'1403/09/30' },
+  { id:'PR-003',prNumber:'PR-2024-0447',departmentId:'D-003',departmentName:'تولید',requesterId:'U-004',requesterName:'حسن موسوی',priority:'high',items:[{itemId:'I-002',itemName:'میلگرد فولادی ۱۲mm',qty:300,unit:'شاخه',estimatedCost:360000000,reason:'سفارش تولید MO-0894'}],totalEstimate:360000000,status:'pending',requestDate:'1403/10/02' },
+];
+
+export const purchaseOrders: PurchaseOrder[] = [
+  { id:'PO-001',poNumber:'PO-2024-0089',supplierId:'SUP-001',supplierName:'فولاد مبارکه',prId:'PR-002',items:[{itemId:'I-001',itemName:'ورق آلومینیوم ۲mm',qty:500,unit:'کیلوگرم',unitPrice:850000,totalPrice:425000000,deliveryDate:'1403/10/01'},{itemId:'I-002',itemName:'میلگرد فولادی',qty:200,unit:'شاخه',unitPrice:1200000,totalPrice:240000000,deliveryDate:'1403/10/01'}],subtotal:665000000,tax:59850000,discount:0,totalAmount:724850000,currency:'ریال',paymentTerms:'۳۰ روزه',deliveryTerms:'درب کارخانه',status:'received',createdDate:'1403/09/20',expectedDelivery:'1403/10/01' },
+  { id:'PO-002',poNumber:'PO-2024-0090',supplierId:'SUP-004',supplierName:'شیمیایی پارسیان',items:[{itemId:'I-004',itemName:'روغن هیدرولیک ISO 46',qty:200,unit:'لیتر',unitPrice:250000,totalPrice:50000000,deliveryDate:'1403/10/05'}],subtotal:50000000,tax:4500000,discount:0,totalAmount:54500000,currency:'ریال',paymentTerms:'نقدی',deliveryTerms:'درب کارخانه',status:'confirmed',createdDate:'1403/10/02',expectedDelivery:'1403/10/05' },
+];
+
+export const assets: Asset[] = [
+  { id:'A-001',code:'EQ-CNC-001',name:'دستگاه CNC ۵ محوره',category:'CNC',manufacturer:'Mazak',model:'Variaxis i-500',serialNumber:'MZ-2021-001',installDate:'1401/06/15',warrantyExpiry:'1404/06/15',departmentId:'D-003',departmentName:'تولید',lineId:'L-001',lineName:'خط ۱',criticality:'critical',status:'running',healthScore:92,mtbf:720,mttr:2.5,totalDowntime:45,maintenanceCost:125000000,lastPM:'1403/09/15',nextPM:'1403/12/15',pmFrequency:'۹۰ روزه' },
+  { id:'A-002',code:'EQ-PRS-001',name:'پرس هیدرولیک ۲۰۰ تن',category:'Press',manufacturer:'Schuler',model:'MSD 200',serialNumber:'SC-2020-001',installDate:'1400/03/01',departmentId:'D-003',departmentName:'تولید',lineId:'L-002',lineName:'خط ۲',criticality:'high',status:'running',healthScore:67,mtbf:480,mttr:4.0,totalDowntime:180,maintenanceCost:285000000,lastPM:'1403/08/20',nextPM:'1403/11/20',pmFrequency:'۹۰ روزه' },
+  { id:'A-003',code:'EQ-FRN-001',name:'کوره ذوب ۱',category:'Furnace',manufacturer:'ABP',model:'IFM-3000',serialNumber:'ABP-2019-001',installDate:'1399/01/01',departmentId:'D-003',departmentName:'تولید',lineId:'L-002',lineName:'خط ۲',criticality:'critical',status:'running',healthScore:88,mtbf:960,mttr:6.0,totalDowntime:30,maintenanceCost:95000000,lastPM:'1403/09/01',nextPM:'1403/12/01',pmFrequency:'۹۰ روزه' },
+  { id:'A-004',code:'EQ-RBT-001',name:'ربات جوشکاری',category:'Robot',manufacturer:'Fanuc',model:'M-20iA',serialNumber:'FN-2022-001',installDate:'1402/01/15',warrantyExpiry:'1405/01/15',departmentId:'D-003',departmentName:'تولید',lineId:'L-004',lineName:'خط ۴',criticality:'high',status:'running',healthScore:95,mtbf:1200,mttr:1.5,totalDowntime:10,maintenanceCost:42000000,lastPM:'1403/09/25',nextPM:'1403/12/25',pmFrequency:'۹۰ روزه' },
+  { id:'A-005',code:'EQ-PMP-001',name:'پمپ هیدرولیک اصلی',category:'Pump',manufacturer:'Rexroth',model:'A10VSO',serialNumber:'RX-2018-001',installDate:'1398/06/01',departmentId:'D-003',departmentName:'تولید',lineId:'L-003',lineName:'خط ۳',criticality:'critical',status:'stopped',healthScore:23,mtbf:240,mttr:8.0,totalDowntime:540,maintenanceCost:450000000,lastPM:'1403/07/10',nextPM:'فوری',pmFrequency:'۶۰ روزه' },
+  { id:'A-006',code:'EQ-CMP-001',name:'کمپرسور باد صنعتی',category:'Compressor',manufacturer:'Atlas Copco',model:'GA 45',serialNumber:'AC-2020-001',installDate:'1400/09/01',departmentId:'D-003',departmentName:'تولید',criticality:'medium',status:'running',healthScore:79,mtbf:600,mttr:3.0,totalDowntime:60,maintenanceCost:78000000,lastPM:'1403/08/05',nextPM:'1403/11/05',pmFrequency:'۹۰ روزه' },
+];
+
+export const workOrders: WorkOrder[] = [
+  { id:'WO-001',woNumber:'WO-2024-0156',assetId:'A-002',assetName:'پرس هیدرولیک',type:'preventive',priority:'medium',title:'تعویض فیلتر و روغن هیدرولیک',description:'تعویض فیلتر و روغن سیستم هیدرولیک طبق برنامه نت پیشگیرانه',assignedTeam:'تیم مکانیک',technicianId:'U-008',technicianName:'مهدی صادقی',estimatedHours:4,spareParts:[{partId:'I-006',partName:'فیلتر روغن',qty:2,cost:3600000},{partId:'I-004',partName:'روغن هیدرولیک',qty:40,cost:10000000}],laborCost:8000000,partsCost:13600000,totalCost:21600000,status:'open',plannedDate:'1403/10/05',checklist:[{text:'قطع تغذیه هیدرولیک',done:false},{text:'تخلیه روغن قدیمی',done:false},{text:'تعویض فیلتر',done:false},{text:'شارژ روغن جدید',done:false},{text:'تست فشار',done:false}] },
+  { id:'WO-002',woNumber:'WO-2024-0157',assetId:'A-005',assetName:'پمپ هیدرولیک',type:'corrective',priority:'critical',title:'تعمیر اضطراری پمپ هیدرولیک',description:'پمپ هیدرولیک اصلی خط ۳ خراب شده و نیاز به تعمیر فوری دارد',assignedTeam:'تیم مکانیک',technicianId:'U-008',technicianName:'مهدی صادقی',estimatedHours:8,actualHours:6,spareParts:[{partId:'I-003',partName:'بلبرینگ',qty:2,cost:900000}],laborCost:16000000,partsCost:900000,totalCost:16900000,status:'in_progress',plannedDate:'1403/10/02',startedAt:'1403/10/02 01:00',checklist:[{text:'بررسی وضعیت پمپ',done:true},{text:'باز کردن پمپ',done:true},{text:'تعویض قطعات معیوب',done:false},{text:'مونتاژ',done:false},{text:'تست عملکرد',done:false}],failureCode:'PUMP-SEAL',rootCause:'فرسودگی سیل و بلبرینگ' },
+  { id:'WO-003',woNumber:'WO-2024-0158',assetId:'A-001',assetName:'دستگاه CNC',type:'preventive',priority:'low',title:'کالیبراسیون سنسورهای CNC',description:'کالیبراسیون دوره‌ای سنسورهای موقعیت و دما',assignedTeam:'تیم ابزار دقیق',estimatedHours:3,spareParts:[],laborCost:6000000,partsCost:0,totalCost:6000000,status:'open',plannedDate:'1403/10/10',checklist:[{text:'کالیبراسیون محور X',done:false},{text:'کالیبراسیون محور Y',done:false},{text:'کالیبراسیون محور Z',done:false},{text:'صدور گواهی',done:false}] },
+];
+
+export const pmSchedules: PMSchedule[] = [
+  { id:'PM-001',assetId:'A-001',assetName:'دستگاه CNC',frequency:'۹۰ روزه',frequencyDays:90,checklist:['بررسی روانکاری','بازرسی بلبرینگ‌ها','کالیبراسیون','بررسی سیستم خنک‌کننده'],estimatedTime:4,assignedTeam:'تیم مکانیک',lastExecuted:'1403/09/15',nextDue:'1403/12/15',status:'active' },
+  { id:'PM-002',assetId:'A-002',assetName:'پرس هیدرولیک',frequency:'۹۰ روزه',frequencyDays:90,checklist:['تعویض فیلتر','بررسی سیل‌ها','تست فشار','بررسی شیلنگ‌ها'],estimatedTime:6,assignedTeam:'تیم مکانیک',lastExecuted:'1403/08/20',nextDue:'1403/11/20',status:'active' },
+  { id:'PM-003',assetId:'A-005',assetName:'پمپ هیدرولیک',frequency:'۶۰ روزه',frequencyDays:60,checklist:['بررسی بلبرینگ','بررسی سیل‌ها','تست ارتعاش','آنالیز روغن'],estimatedTime:3,assignedTeam:'تیم مکانیک',lastExecuted:'1403/07/10',nextDue:'1403/09/10',status:'overdue' },
+];
+
+export const inspections: Inspection[] = [
+  { id:'QC-001',inspectionNumber:'QC-2024-0156',type:'incoming',entityType:'مواد اولیه',entityId:'GRN-001',entityName:'ورق آلومینیوم ۲mm',batchNumber:'B-2024-112',inspectorId:'U-003',inspectorName:'محمد کریمی',parameters:[{id:'P1',name:'ضخامت',type:'numeric',unit:'mm',min:1.9,max:2.1,target:2.0,tolerance:0.1,actualValue:2.02,result:'pass',required:true},{id:'P2',name:'سختی',type:'numeric',unit:'HB',min:55,max:65,target:60,actualValue:58,result:'pass',required:true},{id:'P3',name:'ظاهر سطح',type:'pass_fail',result:'pass',required:true}],result:'pass',totalChecks:3,passedChecks:3,failedChecks:0,photos:[],inspectionDate:'1403/10/01' },
+  { id:'QC-002',inspectionNumber:'QC-2024-0157',type:'in_process',entityType:'محصول',entityId:'MO-0891',entityName:'قطعه A45',batchNumber:'B-2024-113',lineId:'L-001',lineName:'خط ۱',inspectorId:'U-003',inspectorName:'محمد کریمی',parameters:[{id:'P4',name:'ابعاد طول',type:'numeric',unit:'mm',min:99.5,max:100.5,target:100.0,tolerance:0.5,actualValue:100.3,result:'pass',required:true},{id:'P5',name:'ابعاد عرض',type:'numeric',unit:'mm',min:49.5,max:50.5,target:50.0,actualValue:50.8,result:'fail',required:true},{id:'P6',name:'وزن',type:'numeric',unit:'g',min:245,max:255,target:250,actualValue:249,result:'pass',required:true}],result:'conditional',totalChecks:3,passedChecks:2,failedChecks:1,photos:[],inspectionDate:'1403/10/02' },
+];
+
+export const ncrs: NCR[] = [
+  { id:'NCR-001',ncrNumber:'NCR-2024-0023',productName:'بدنه فولادی B12',batchNumber:'B-2024-114',defectType:'ترک سطحی',severity:'major',qty:12,description:'ترک‌های عرضی روی سطح ۱۲ عدد بدنه مشاهده شد',photos:[],reportedBy:'محمد کریمی',reportedDate:'1403/10/01',disposition:'scrap',status:'investigating',cost:9600000 },
+  { id:'NCR-002',ncrNumber:'NCR-2024-0024',productName:'قطعه A45',batchNumber:'B-2024-113',defectType:'ابعاد خارج از تلرانس',severity:'minor',qty:3,description:'عرض ۳ قطعه خارج از محدوده مجاز',photos:[],reportedBy:'محمد کریمی',reportedDate:'1403/10/02',disposition:'rework',capaId:'CAPA-001',status:'open',cost:1050000 },
+];
+
+export const capas: CAPA[] = [
+  { id:'CAPA-001',capaNumber:'CAPA-2024-0012',type:'corrective',issueDescription:'ابعاد عرض قطعه A45 خارج از تلرانس',rootCause:'فرسودگی ابزار برش و عدم کالیبراسیون به‌موقع',ncrId:'NCR-002',sourceType:'NCR',actions:[{description:'تعویض ابزار برش CNC',owner:'مهدی صادقی',dueDate:'1403/10/03',status:'completed',completedDate:'1403/10/02'},{description:'بازبینی برنامه کالیبراسیون',owner:'محمد کریمی',dueDate:'1403/10/05',status:'in_progress'},{description:'آموزش اپراتور برای بازرسی حین تولید',owner:'حسن موسوی',dueDate:'1403/10/10',status:'open'}],status:'in_progress',createdDate:'1403/10/02' },
+];
+
+export const samples: Sample[] = [
+  { id:'S-001',sampleNumber:'LAB-2024-0089',batchNumber:'B-2024-112',productName:'ورق آلومینیوم ۲mm',source:'raw_material',collectorId:'U-003',collectorName:'محمد کریمی',collectionDate:'1403/10/01',tests:[{id:'LT-001',testName:'تحلیل ترکیب شیمیایی',method:'ICP-OES',unit:'%',specification:{min:99.0,max:100},result:99.5,resultType:'numeric',status:'completed',pass:true,testedBy:'فاطمه رضایی',testedDate:'1403/10/01'},{id:'LT-002',testName:'تست کشش',method:'ASTM E8',unit:'MPa',specification:{min:200,max:280,target:240},result:235,resultType:'numeric',status:'completed',pass:true,testedBy:'فاطمه رضایی',testedDate:'1403/10/01'},{id:'LT-003',testName:'تست سختی',method:'ASTM E10',unit:'HB',specification:{min:55,max:65,target:60},result:58,resultType:'numeric',status:'completed',pass:true,testedBy:'فاطمه رضایی',testedDate:'1403/10/01'}],overallResult:'pass',coaGenerated:true,coaNumber:'COA-2024-0045',status:'approved' },
+  { id:'S-002',sampleNumber:'LAB-2024-0090',batchNumber:'B-2024-113',productName:'قطعه A45',source:'production',collectorId:'U-003',collectorName:'محمد کریمی',collectionDate:'1403/10/02',tests:[{id:'LT-004',testName:'بازرسی ابعادی',method:'CMM',unit:'mm',specification:{min:99.5,max:100.5,target:100.0},result:100.3,resultType:'numeric',status:'completed',pass:true,testedBy:'فاطمه رضایی',testedDate:'1403/10/02'},{id:'LT-005',testName:'تست سختی سطح',method:'Rockwell',unit:'HRC',specification:{min:45,max:55},resultType:'numeric',status:'in_progress'}],overallResult:'in_progress',coaGenerated:false,status:'in_progress' },
+];
+
+export const spcData: SPCData[] = [
+  {sample:1,value:100.1,ucl:100.5,lcl:99.5,cl:100.0},{sample:2,value:99.8,ucl:100.5,lcl:99.5,cl:100.0},{sample:3,value:100.3,ucl:100.5,lcl:99.5,cl:100.0},{sample:4,value:99.9,ucl:100.5,lcl:99.5,cl:100.0},{sample:5,value:100.0,ucl:100.5,lcl:99.5,cl:100.0},{sample:6,value:100.2,ucl:100.5,lcl:99.5,cl:100.0},{sample:7,value:99.7,ucl:100.5,lcl:99.5,cl:100.0},{sample:8,value:100.4,ucl:100.5,lcl:99.5,cl:100.0},{sample:9,value:100.1,ucl:100.5,lcl:99.5,cl:100.0},{sample:10,value:99.6,ucl:100.5,lcl:99.5,cl:100.0},{sample:11,value:100.3,ucl:100.5,lcl:99.5,cl:100.0},{sample:12,value:100.8,ucl:100.5,lcl:99.5,cl:100.0},
+];
+
+export const phase3Charts = {
+  stockByCategory: [
+    {name:'مواد اولیه',value:526500000,color:'#3b82f6'},{name:'قطعات یدکی',value:59850000,color:'#10b981'},{name:'محصول نهایی',value:840000000,color:'#f59e0b'},{name:'مصرفی',value:18900000,color:'#8b5cf6'},{name:'ایمنی',value:8100000,color:'#ef4444'},{name:'شیمیایی',value:11400000,color:'#06b6d4'},
+  ],
+  supplierPerformance: [
+    {name:'فولاد مبارکه',quality:97,delivery:92,price:85},{name:'آلومینیوم ایران',quality:95,delivery:88,price:82},{name:'قطعات پارس',quality:90,delivery:78,price:88},{name:'شیمیایی پارسیان',quality:93,delivery:85,price:90},
+  ],
+  maintenanceCostTrend: [{month:'مهر',pm:25,cm:45},{month:'آبان',pm:30,cm:35},{month:'آذر',pm:28,cm:55},{month:'دی',pm:32,cm:20}],
+  qualityTrend: [{week:'W36',defect:2.1,scrap:1.5},{week:'W37',defect:1.8,scrap:1.3},{week:'W38',defect:2.5,scrap:1.8},{week:'W39',defect:1.6,scrap:1.1},{week:'W40',defect:1.8,scrap:0.9}],
+};

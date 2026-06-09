@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FactoryOS — سیستم عامل صنعتی</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x2699;</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <meta name="theme-color" content="#020817" />
+    <meta name="description" content="FactoryOS — Industrial Operating System for Smart Manufacturing" />
+    <style>
+      body { margin:0; padding:0; background:#020817; color:#F8FAFC; font-family:'Vazirmatn',system-ui,sans-serif; direction:rtl; }
+      #root { min-height:100vh; }
+      .loading-spinner { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+      .loading-spinner::after { content:''; width:40px; height:40px; border:3px solid #1E293B; border-top-color:#00C2FF; border-radius:50%; animation:spin 1s linear infinite; }
+      @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="root"><div class="loading-spinner"></div></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
