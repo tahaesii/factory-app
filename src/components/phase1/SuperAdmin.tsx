@@ -1,58 +1,166 @@
-import { useState } from 'react';
-import { Building2, Key, Package, Store, Activity, Cpu, Users, DollarSign, LayoutDashboard, Plus, FlaskConical, FileText, X, CheckCircle2 } from 'lucide-react';
-import { useAppStore } from '@/store/appStore';
-import DataTable, { Column } from '@/components/ui/DataTable';
-import FormModal, { FormField } from '@/components/ui/FormModal';
-import StatCard, { StatGrid } from '@/components/ui/StatCard';
-import { factories as initialFactories, licenses as initialLicenses, customPages as initialPages, FactoryData } from '@/data/tenantData';
-import { modules } from '@/data/modules';
-import { uid } from '@/services/dataService';
-import type { Tenant } from '@/types';
-import type { CustomPage, CustomPageField, CustomPageCategory } from '@/types/tenant';
+import { useState } from "react";
+import {
+  Building2,
+  Key,
+  Package,
+  Store,
+  Activity,
+  Cpu,
+  Users,
+  DollarSign,
+  LayoutDashboard,
+  Plus,
+  FlaskConical,
+  FileText,
+  CheckCircle2,
+} from "lucide-react";
+import { useAppStore } from "@/store/appStore";
+import DataTable, { Column } from "@/components/ui/DataTable";
+import FormModal, { FormField } from "@/components/ui/FormModal";
+import StatCard, { StatGrid } from "@/components/ui/StatCard";
+import {
+  factories as initialFactories,
+  licenses as initialLicenses,
+  customPages as initialPages,
+  FactoryData,
+} from "@/data/tenantData";
+import { modules } from "@/data/modules";
+import { uid } from "@/services/dataService";
+import type {
+  CustomPage,
+  CustomPageField,
+  CustomPageCategory,
+} from "@/types/tenant";
 
-const catIcons: Record<CustomPageCategory, any> = { plc: Cpu, lab: FlaskConical, form: FileText, dashboard: LayoutDashboard };
-const catColors: Record<CustomPageCategory, string> = { plc: '#06b6d4', lab: '#a855f7', form: '#84cc16', dashboard: '#3b82f6' };
-const catLabels: Record<CustomPageCategory, string> = { plc: 'PLC', lab: 'آزمایشگاه', form: 'فرم', dashboard: 'داشبورد' };
+const catIcons: Record<CustomPageCategory, any> = {
+  plc: Cpu,
+  lab: FlaskConical,
+  form: FileText,
+  dashboard: LayoutDashboard,
+};
+const catColors: Record<CustomPageCategory, string> = {
+  plc: "#06b6d4",
+  lab: "#a855f7",
+  form: "#84cc16",
+  dashboard: "#3b82f6",
+};
+const catLabels: Record<CustomPageCategory, string> = {
+  plc: "PLC",
+  lab: "آزمایشگاه",
+  form: "فرم",
+  dashboard: "داشبورد",
+};
 
 export function SuperAdminModule() {
   const currentPage = useAppStore((s) => s.currentPage);
   const setCurrentPage = useAppStore((s) => s.setCurrentPage);
   switch (currentPage) {
-    case 'tenants': return <TenantsPage />;
-    case 'licenses': return <LicensesPage />;
-    case 'modules': return <ModulesPage />;
-    case 'health': return <HealthPage />;
-    case 'marketplace': return <MarketplacePage />;
-    default: return <SuperAdminDashboard onNavigate={setCurrentPage} />;
+    case "tenants":
+      return <TenantsPage />;
+    case "modules":
+      return <ModulesPage />;
+    case "health":
+      return <HealthPage />;
+    case "marketplace":
+      return <MarketplacePage />;
+    default:
+      return <SuperAdminDashboard onNavigate={setCurrentPage} />;
   }
 }
 
-function SuperAdminDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
+function SuperAdminDashboard({
+  onNavigate,
+}: {
+  onNavigate: (p: string) => void;
+}) {
   const [factories, setFactories] = useState(initialFactories);
-  const activeCount = factories.filter(f => f.status === 'active').length;
+  const activeCount = factories.filter((f) => f.status === "active").length;
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-white">پنل مدیریت ارشد FactoryOS</h1><p className="text-zinc-500">مدیریت چند-کارخانه‌ای (Multi-Tenant) — لایسنس، ماژول‌ها، صفحات سفارشی</p></div>
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            پنل مدیریت ارشد FactoryOS
+          </h1>
+          <p className="text-zinc-500">
+            مدیریت چند-کارخانه‌ای (Multi-Tenant) — لایسنس، ماژول‌ها، صفحات
+            سفارشی
+          </p>
+        </div>
       </div>
       <StatGrid columns={4}>
-        <StatCard title="کارخانه‌های فعال" value={activeCount} unit={`از ${factories.length}`} icon={<Building2 size={22} />} color="#3b82f6" />
-        <StatCard title="مجموع کاربران" value="۱,۲۴۰" unit="نفر" change="+۸۹ این ماه" changeType="up" icon={<Users size={22} />} color="#10b981" />
-        <StatCard title="لایسنس‌های فعال" value={initialLicenses.filter(l => l.status === 'active').length} unit={`از ${initialLicenses.length}`} icon={<Key size={22} />} color="#a855f7" />
-        <StatCard title="درآمد ماهانه" value="۲.۴B" unit="ریال" icon={<DollarSign size={22} />} color="#f59e0b" />
+        <StatCard
+          title="کارخانه‌های فعال"
+          value={activeCount}
+          unit={`از ${factories.length}`}
+          icon={<Building2 size={22} />}
+          color="#3b82f6"
+        />
+        <StatCard
+          title="مجموع کاربران"
+          value="۱,۲۴۰"
+          unit="نفر"
+          change="+۸۹ این ماه"
+          changeType="up"
+          icon={<Users size={22} />}
+          color="#10b981"
+        />
+        <StatCard
+          title="لایسنس‌های فعال"
+          value={initialLicenses.filter((l) => l.status === "active").length}
+          unit={`از ${initialLicenses.length}`}
+          icon={<Key size={22} />}
+          color="#a855f7"
+        />
+        <StatCard
+          title="درآمد ماهانه"
+          value="۲.۴B"
+          unit="ریال"
+          icon={<DollarSign size={22} />}
+          color="#f59e0b"
+        />
       </StatGrid>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title:'مدیریت کارخانه‌ها', icon:Building2, color:'#3b82f6', page:'tenants', desc:'ایجاد و ویرایش کارخانه‌های مشتری' },
-          { title:'لایسنس‌ها', icon:Key, color:'#f59e0b', page:'licenses', desc:'صدور کلید لایسنس' },
-          { title:'فعال‌سازی ماژول', icon:Package, color:'#8b5cf6', page:'modules', desc:'تنظیم ماژول‌های هر کارخانه' },
-          { title:'سلامت سیستم', icon:Activity, color:'#10b981', page:'health', desc:'مانیتورینگ سرورها' },
-          { title:'مارکت‌پلیس', icon:Store, color:'#ec4899', page:'marketplace', desc:'افزونه‌ها و پک‌ها' },
-        ].map(item => (
-          <button key={item.page} onClick={() => onNavigate(item.page)}
-            className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 text-center transition-all group">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform" style={{ backgroundColor:`${item.color}15` }}>
-              <item.icon size={20} style={{ color:item.color }} />
+          {
+            title: "مدیریت کارخانه‌ها",
+            icon: Building2,
+            color: "#3b82f6",
+            page: "tenants",
+            desc: "ایجاد و ویرایش کارخانه‌های مشتری",
+          },
+          {
+            title: "فعال‌سازی ماژول",
+            icon: Package,
+            color: "#8b5cf6",
+            page: "modules",
+            desc: "تنظیم ماژول‌های هر کارخانه",
+          },
+          {
+            title: "سلامت سیستم",
+            icon: Activity,
+            color: "#10b981",
+            page: "health",
+            desc: "مانیتورینگ سرورها",
+          },
+          {
+            title: "مارکت‌پلیس",
+            icon: Store,
+            color: "#ec4899",
+            page: "marketplace",
+            desc: "افزونه‌ها و پک‌ها",
+          },
+        ].map((item) => (
+          <button
+            key={item.page}
+            onClick={() => onNavigate(item.page)}
+            className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 text-center transition-all group"
+          >
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform"
+              style={{ backgroundColor: `${item.color}15` }}
+            >
+              <item.icon size={20} style={{ color: item.color }} />
             </div>
             <p className="text-white text-sm font-medium">{item.title}</p>
             <p className="text-zinc-600 text-xs mt-1">{item.desc}</p>
@@ -62,10 +170,27 @@ function SuperAdminDashboard({ onNavigate }: { onNavigate: (p: string) => void }
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
         <h3 className="text-white font-bold mb-3">لایسنس‌های منقضی نزدیک</h3>
         <div className="space-y-2">
-          {initialLicenses.filter(l => l.status === 'active').map(l => {
-            const f = factories.find(f => f.id === l.tenantId);
-            return <div key={l.id} className="flex items-center justify-between bg-zinc-800/40 rounded-xl p-3"><span className="text-white text-sm">{f?.name || l.tenantId}</span><span className="text-zinc-400 text-xs font-mono">{l.licenseKey}</span><span className="text-amber-400 text-xs">انقضا: {l.expiryDate}</span></div>;
-          })}
+          {initialLicenses
+            .filter((l) => l.status === "active")
+            .map((l) => {
+              const f = factories.find((f) => f.id === l.tenantId);
+              return (
+                <div
+                  key={l.id}
+                  className="flex items-center justify-between bg-zinc-800/40 rounded-xl p-3"
+                >
+                  <span className="text-white text-sm">
+                    {f?.name || l.tenantId}
+                  </span>
+                  <span className="text-zinc-400 text-xs font-mono">
+                    {l.licenseKey}
+                  </span>
+                  <span className="text-amber-400 text-xs">
+                    انقضا: {l.expiryDate}
+                  </span>
+                </div>
+              );
+            })}
         </div>
       </div>
     </div>
@@ -73,76 +198,274 @@ function SuperAdminDashboard({ onNavigate }: { onNavigate: (p: string) => void }
 }
 
 function TenantsPage() {
+  const [licenses, setLicenses] = useState(initialLicenses);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FactoryData | null>(null);
   const [localFactories, setLocalFactories] = useState(initialFactories);
   const [expandedFactory, setExpandedFactory] = useState<string | null>(null);
 
   const columns: Column<FactoryData>[] = [
-    { key:'code', title:'کد', render:(v) => <span className="font-mono text-blue-400">{v}</span> },
-    { key:'name', title:'نام کارخانه', render:(_,row) => (<div><p className="text-white">{row.name}</p><p className="text-zinc-500 text-xs">{row.industry}</p></div>) },
-    { key:'ownerName', title:'مالک' },
-    { key:'city', title:'شهر' },
-    { key:'planId', title:'پلن', render:(v) => { const plans:Record<string,{name:string,color:string}> = {'PL-001':{name:'Trial',color:'#6b7280'},'PL-002':{name:'Professional',color:'#3b82f6'},'PL-003':{name:'Enterprise',color:'#f59e0b'}}; const p=plans[v]||{name:v,color:'#6b7280'}; return <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor:`${p.color}20`, color:p.color }}>{p.name}</span>; }},
-    { key:'status', title:'وضعیت', render:(v) => { const s:{label:string,color:string} = v==='active'?{label:'فعال',color:'#10b981'}:v==='trial'?{label:'آزمایشی',color:'#f59e0b'}:v==='suspended'?{label:'تعلیق',color:'#ef4444'}:{label:'منقضی',color:'#6b7280'}; return <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor:`${s.color}20`, color:s.color }}>{s.label}</span>; }},
-    { key:'expiresAt', title:'انقضا' },
+    {
+      key: "code",
+      title: "کد",
+      render: (v) => <span className="font-mono text-blue-400">{v}</span>,
+    },
+    {
+      key: "name",
+      title: "نام کارخانه",
+      render: (_, row) => (
+        <div>
+          <p className="text-white">{row.name}</p>
+          <p className="text-zinc-500 text-xs">{row.industry}</p>
+        </div>
+      ),
+    },
+    { key: "ownerName", title: "مالک" },
+    { key: "city", title: "شهر" },
+    {
+      key: "planId",
+      title: "پلن",
+      render: (v) => {
+        const plans: Record<string, { name: string; color: string }> = {
+          "PL-001": { name: "Trial", color: "#6b7280" },
+          "PL-002": { name: "Professional", color: "#3b82f6" },
+          "PL-003": { name: "Enterprise", color: "#f59e0b" },
+        };
+        const p = plans[v] || { name: v, color: "#6b7280" };
+        return (
+          <span
+            className="text-xs px-2 py-0.5 rounded"
+            style={{ backgroundColor: `${p.color}20`, color: p.color }}
+          >
+            {p.name}
+          </span>
+        );
+      },
+    },
+    {
+      key: "status",
+      title: "وضعیت",
+      render: (v) => {
+        const s: { label: string; color: string } =
+          v === "active"
+            ? { label: "فعال", color: "#10b981" }
+            : v === "trial"
+              ? { label: "آزمایشی", color: "#f59e0b" }
+              : v === "suspended"
+                ? { label: "تعلیق", color: "#ef4444" }
+                : { label: "منقضی", color: "#6b7280" };
+        return (
+          <span
+            className="text-xs px-2 py-0.5 rounded"
+            style={{ backgroundColor: `${s.color}20`, color: s.color }}
+          >
+            {s.label}
+          </span>
+        );
+      },
+    },
+    { key: "expiresAt", title: "انقضا" },
   ];
 
   const formFields: FormField[] = [
-    { name:'name', label:'نام کارخانه', type:'text', required:true },
-    { name:'code', label:'کد', type:'text', required:true },
-    { name:'industry', label:'صنعت', type:'select', required:true, options:[{ value:'فولاد و فلزات', label:'فولاد و فلزات' },{ value:'خودروسازی', label:'خودروسازی' },{ value:'پتروشیمی', label:'پتروشیمی' },{ value:'دارویی', label:'دارویی' },{ value:'غذایی', label:'غذایی' }] },
-    { name:'ownerName', label:'نام مالک', type:'text', required:true },
-    { name:'ownerMobile', label:'موبایل مالک', type:'tel' },
-    { name:'ownerEmail', label:'ایمیل مالک', type:'email' },
-    { name:'address', label:'آدرس', type:'textarea', colSpan:2 },
-    { name:'city', label:'شهر', type:'text' },
-    { name:'planId', label:'پلن', type:'select', options:[{ value:'PL-001', label:'Trial' },{ value:'PL-002', label:'Professional' },{ value:'PL-003', label:'Enterprise' }] },
-    { name:'status', label:'وضعیت', type:'select', options:[{ value:'active', label:'فعال' },{ value:'trial', label:'آزمایشی' },{ value:'suspended', label:'تعلیق' }] },
+    { name: "name", label: "نام کارخانه", type: "text", required: true },
+    { name: "code", label: "کد", type: "text", required: true },
+    {
+      name: "industry",
+      label: "صنعت",
+      type: "select",
+      required: true,
+      options: [
+        { value: "فولاد و فلزات", label: "فولاد و فلزات" },
+        { value: "خودروسازی", label: "خودروسازی" },
+        { value: "پتروشیمی", label: "پتروشیمی" },
+        { value: "دارویی", label: "دارویی" },
+        { value: "غذایی", label: "غذایی" },
+      ],
+    },
+    { name: "ownerName", label: "نام مالک", type: "text", required: true },
+        { name:'userLimit', label:'سقف کاربر', type:'number', required:true },
+    { name:'expiryDate', label:'تاریخ انقضا', type:'date', required:true },
+    { name: "ownerMobile", label: "موبایل مالک", type: "tel", required:true  },
+    { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
+    { name: "address", label: "آدرس", type: "textarea", colSpan: 2 },
+    { name: "city", label: "شهر", type: "text" },
+    {
+      name: "planId",
+      label: "پلن",
+      type: "select",
+      options: [
+        { value: "PL-001", label: "Trial" },
+        { value: "PL-002", label: "Professional" },
+        { value: "PL-003", label: "Enterprise" },
+      ],
+    },
+    {
+      name: "status",
+      label: "وضعیت",
+      type: "select",
+      options: [
+        { value: "active", label: "فعال" },
+        { value: "trial", label: "آزمایشی" },
+        { value: "suspended", label: "تعلیق" },
+      ],
+    },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div><h1 className="text-xl font-bold text-white">مدیریت کارخانه‌ها (Tenants)</h1><p className="text-zinc-500 text-sm">ایجاد و مدیریت مشتریان صنعتی</p></div>
-      <DataTable data={localFactories} columns={columns} title="لیست کارخانه‌ها" icon={<Building2 size={18} className="text-blue-500" />}
-        onAdd={()=>{setEditing(null);setShowModal(true)}} onEdit={(t:any)=>{setEditing(t);setShowModal(true)}} addLabel="کارخانه جدید" />
-      <FormModal isOpen={showModal} onClose={()=>setShowModal(false)}
-        onSubmit={(d:any)=>{if(editing){setLocalFactories(prev=>prev.map(f=>f.id===editing.id?{...f,...d}:f))}else{setLocalFactories(prev=>[...prev,{id:uid('FAC-'),enabledModules:['command-center'],...d} as unknown as FactoryData])}setShowModal(false)}}
-        title={editing?'ویرایش کارخانه':'کارخانه جدید'} fields={formFields} initialData={editing||{}} size="lg" />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white">مدیریت لایسنس‌ها</h1>
+          <p className="text-zinc-500 text-sm">
+            صدور و مدیریت کلیدهای مجوز برای هر کارخانه
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {[
+          { label: "کل لایسنس‌ها", value: licenses.length, color: "#3b82f6" },
+          {
+            label: "فعال",
+            value: licenses.filter((l) => l.status === "active").length,
+            color: "#10b981",
+          },
+          {
+            label: "منقضی",
+            value: licenses.filter((l) => l.status === "expired").length,
+            color: "#ef4444",
+          },
+          {
+            label: "کارخانه تحت پوشش",
+            value: new Set(licenses.map((l) => l.tenantId)).size,
+            color: "#f59e0b",
+          },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"
+          >
+            <p className="text-2xl font-black text-white">{s.value}</p>
+            <p className="text-zinc-500 text-xs mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      <div>
+        <h1 className="text-xl font-bold text-white">
+          مدیریت کارخانه‌ها (Tenants)
+        </h1>
+        <p className="text-zinc-500 text-sm">ایجاد و مدیریت مشتریان صنعتی</p>
+      </div>
+      <DataTable
+        data={localFactories}
+        columns={columns}
+        title="لیست کارخانه‌ها"
+        icon={<Building2 size={18} className="text-blue-500" />}
+        onAdd={() => {
+          setEditing(null);
+          setShowModal(true);
+        }}
+        onEdit={(t: any) => {
+          setEditing(t);
+          setShowModal(true);
+        }}
+        addLabel="کارخانه جدید"
+      />
+      <FormModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={(d: any) => {
+          if (editing) {
+            setLocalFactories((prev) =>
+              prev.map((f) => (f.id === editing.id ? { ...f, ...d } : f)),
+            );
+          } else {
+            setLocalFactories((prev) => [
+              ...prev,
+              {
+                id: uid("FAC-"),
+                enabledModules: ["command-center"],
+                ...d,
+              } as unknown as FactoryData,
+            ]);
+          }
+          setShowModal(false);
+        }}
+        title={editing ? "ویرایش کارخانه" : "کارخانه جدید"}
+        fields={formFields}
+        initialData={editing || {}}
+        size="lg"
+      />
       <div className="space-y-3">
-        <h2 className="text-white font-bold text-lg">ماژول‌های فعال هر کارخانه</h2>
-        {localFactories.map(f => (
-          <div key={f.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-            <button onClick={() => setExpandedFactory(expandedFactory===f.id ? null : f.id)}
-              className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors">
+        <h2 className="text-white font-bold text-lg">
+          ماژول‌های فعال هر کارخانه
+        </h2>
+        {localFactories.map((f) => (
+          <div
+            key={f.id}
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
+          >
+            <button
+              onClick={() =>
+                setExpandedFactory(expandedFactory === f.id ? null : f.id)
+              }
+              className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors"
+            >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-500 font-black">{f.code.charAt(0)}</div>
-                <div className="text-right"><p className="text-white font-bold">{f.name}</p><p className="text-zinc-500 text-xs">{f.enabledModules.length} ماژول فعال</p></div>
+                <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-500 font-black">
+                  {f.code.charAt(0)}
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-bold">{f.name}</p>
+                  <p className="text-zinc-500 text-xs">
+                    {f.enabledModules.length} ماژول فعال
+                  </p>
+                </div>
               </div>
-              <span className="text-zinc-600">{expandedFactory===f.id ? '▲' : '▼'}</span>
+              <span className="text-zinc-600">
+                {expandedFactory === f.id ? "▲" : "▼"}
+              </span>
             </button>
             {expandedFactory === f.id && (
               <div className="px-4 pb-4 border-t border-zinc-800 pt-3">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                  {modules.filter(m => m.id !== 'core' && m.id !== 'superadmin').map(mod => {
-                    const enabled = f.enabledModules.includes(mod.id);
-                    return (
-                      <div key={mod.id} className={`flex items-center justify-between p-2 rounded-lg text-xs ${enabled ? 'bg-green-500/10 border border-green-600/20' : 'bg-zinc-800/50 border border-zinc-800'}`}>
-                        <span className={enabled ? 'text-white' : 'text-zinc-500'}>{mod.title}</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked={enabled} readOnly className="sr-only peer" />
-                          <div className={`w-8 h-4 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all ${enabled ? 'bg-green-600' : 'bg-zinc-600'}`} />
-                        </label>
-                      </div>
-                    );
-                  })}
+                  {modules
+                    .filter((m) => m.id !== "core" && m.id !== "superadmin")
+                    .map((mod) => {
+                      const enabled = f.enabledModules.includes(mod.id);
+                      return (
+                        <div
+                          key={mod.id}
+                          className={`flex items-center justify-between p-2 rounded-lg text-xs ${enabled ? "bg-green-500/10 border border-green-600/20" : "bg-zinc-800/50 border border-zinc-800"}`}
+                        >
+                          <span
+                            className={enabled ? "text-white" : "text-zinc-500"}
+                          >
+                            {mod.title}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={enabled}
+                              readOnly
+                              className="sr-only peer"
+                            />
+                            <div
+                              className={`w-8 h-4 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all ${enabled ? "bg-green-600" : "bg-zinc-600"}`}
+                            />
+                          </label>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
           </div>
         ))}
       </div>
-      <div className="mt-8"><PageBuilderSection factoryId={expandedFactory || ''} /></div>
+      <div className="mt-8">
+        <PageBuilderSection factoryId={expandedFactory || ""} />
+      </div>
     </div>
   );
 }
@@ -152,180 +475,413 @@ function PageBuilderSection({ factoryId }: { factoryId: string }) {
   const [showBuilder, setShowBuilder] = useState(false);
   const [editingPage, setEditingPage] = useState<CustomPage | null>(null);
 
-  const factoryPages = factoryId ? localPages.filter(p => p.factoryId === factoryId) : localPages;
+  const factoryPages = factoryId
+    ? localPages.filter((p) => p.factoryId === factoryId)
+    : localPages;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-white font-bold text-lg">📋 سازنده صفحات سفارشی (Page Builder)</h2>
-        <button onClick={() => { setEditingPage(null); setShowBuilder(true); }} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-1.5 transition-colors"><Plus size={15} />صفحه جدید</button>
+        <h2 className="text-white font-bold text-lg">
+          📋 سازنده صفحات سفارشی (Page Builder)
+        </h2>
+        <button
+          onClick={() => {
+            setEditingPage(null);
+            setShowBuilder(true);
+          }}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-1.5 transition-colors"
+        >
+          <Plus size={15} />
+          صفحه جدید
+        </button>
       </div>
-      {!factoryId && <p className="text-zinc-600 text-sm">یک کارخانه را از بالا انتخاب کنید تا صفحات آن را ببینید</p>}
+      {!factoryId && (
+        <p className="text-zinc-600 text-sm">
+          یک کارخانه را از بالا انتخاب کنید تا صفحات آن را ببینید
+        </p>
+      )}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {factoryPages.map(p => {
+        {factoryPages.map((p) => {
           const Icon = catIcons[p.category];
           const color = catColors[p.category];
           return (
-            <div key={p.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <div
+              key={p.id}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4"
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor:`${color}20` }}><Icon size={16} style={{ color }} /></div>
-                  <div><p className="text-white font-medium text-sm">{p.title}</p><p className="text-zinc-500 text-[10px]">{catLabels[p.category]} • {initialFactories.find(f => f.id === p.factoryId)?.name || p.factoryId}</p></div>
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${color}20` }}
+                  >
+                    <Icon size={16} style={{ color }} />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">{p.title}</p>
+                    <p className="text-zinc-500 text-[10px]">
+                      {catLabels[p.category]} •{" "}
+                      {initialFactories.find((f) => f.id === p.factoryId)
+                        ?.name || p.factoryId}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <p className="text-zinc-500 text-xs mb-3">{p.schema.length} فیلد</p>
-              <button onClick={() => { setEditingPage(p); setShowBuilder(true); }} className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-1.5 rounded-lg text-xs transition-colors">ویرایش</button>
+              <p className="text-zinc-500 text-xs mb-3">
+                {p.schema.length} فیلد
+              </p>
+              <button
+                onClick={() => {
+                  setEditingPage(p);
+                  setShowBuilder(true);
+                }}
+                className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-1.5 rounded-lg text-xs transition-colors"
+              >
+                ویرایش
+              </button>
             </div>
           );
         })}
-        {factoryPages.length === 0 && factoryId && <p className="text-zinc-600 text-sm col-span-3 text-center py-8">هیچ صفحه سفارشی برای این کارخانه ساخته نشده</p>}
+        {factoryPages.length === 0 && factoryId && (
+          <p className="text-zinc-600 text-sm col-span-3 text-center py-8">
+            هیچ صفحه سفارشی برای این کارخانه ساخته نشده
+          </p>
+        )}
       </div>
-      <PageBuilderModal isOpen={showBuilder} onClose={() => setShowBuilder(false)} page={editingPage} factoryId={factoryId} />
+      <PageBuilderModal
+        isOpen={showBuilder}
+        onClose={() => setShowBuilder(false)}
+        page={editingPage}
+        factoryId={factoryId}
+      />
     </div>
   );
 }
 
-function PageBuilderModal({ isOpen, onClose, page, factoryId }: { isOpen: boolean; onClose: () => void; page: CustomPage | null; factoryId: string }) {
-  const [title, setTitle] = useState(page?.title || '');
-  const [category, setCategory] = useState<CustomPageCategory>(page?.category || 'form');
-  const [selectedFactory, setSelectedFactory] = useState(page?.factoryId || factoryId);
+function PageBuilderModal({
+  isOpen,
+  onClose,
+  page,
+  factoryId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  page: CustomPage | null;
+  factoryId: string;
+}) {
+  const [title, setTitle] = useState(page?.title || "");
+  const [category, setCategory] = useState<CustomPageCategory>(
+    page?.category || "form",
+  );
+  const [selectedFactory, setSelectedFactory] = useState(
+    page?.factoryId || factoryId,
+  );
   const [fields, setFields] = useState<CustomPageField[]>(page?.schema || []);
-  const [newField, setNewField] = useState<CustomPageField>({ name:'', label:'', type:'text', required:false });
+  const [newField, setNewField] = useState<CustomPageField>({
+    name: "",
+    label: "",
+    type: "text",
+    required: false,
+  });
   const [saved, setSaved] = useState(false);
 
   if (!isOpen) return null;
-  const addField = () => { if (!newField.name || !newField.label) return; setFields(prev => [...prev, { ...newField, name: newField.name.replace(/\s+/g,'_') }]); setNewField({ name:'', label:'', type:'text', required:false }); };
-  const removeField = (idx: number) => setFields(prev => prev.filter((_,i) => i !== idx));
-  const handleSave = () => { setSaved(true); setTimeout(() => { setSaved(false); onClose(); }, 1000); };
-  const typeIcons: Record<string, string> = { text:'📝', number:'🔢', select:'📋', date:'📅', time:'⏰', textarea:'📄', checkbox:'✅', file:'📎', signature:'✍️', barcode:'📊', qr:'📱' };
+  const addField = () => {
+    if (!newField.name || !newField.label) return;
+    setFields((prev) => [
+      ...prev,
+      { ...newField, name: newField.name.replace(/\s+/g, "_") },
+    ]);
+    setNewField({ name: "", label: "", type: "text", required: false });
+  };
+  const removeField = (idx: number) =>
+    setFields((prev) => prev.filter((_, i) => i !== idx));
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => {
+      setSaved(false);
+      onClose();
+    }, 1000);
+  };
+  const typeIcons: Record<string, string> = {
+    text: "📝",
+    number: "🔢",
+    select: "📋",
+    date: "📅",
+    time: "⏰",
+    textarea: "📄",
+    checkbox: "✅",
+    file: "📎",
+    signature: "✍️",
+    barcode: "📊",
+    qr: "📱",
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-zinc-800 flex items-center justify-between"><h2 className="text-lg font-bold text-white">{page ? 'ویرایش صفحه' : 'صفحه سفارشی جدید'}</h2><button onClick={onClose} className="text-zinc-500 hover:text-white text-xl">✕</button></div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white">
+            {page ? "ویرایش صفحه" : "صفحه سفارشی جدید"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-zinc-500 hover:text-white text-xl"
+          >
+            ✕
+          </button>
+        </div>
         <div className="p-5 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm text-zinc-400 mb-1">عنوان صفحه</label><input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50" /></div>
-            <div><label className="block text-sm text-zinc-400 mb-1">کارخانه</label><select value={selectedFactory} onChange={e => setSelectedFactory(e.target.value)} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50">{initialFactories.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></div>
-            <div><label className="block text-sm text-zinc-400 mb-1">دسته</label><div className="flex gap-2">{(Object.entries(catLabels) as [CustomPageCategory, string][]).map(([key, label]) => (<button key={key} onClick={() => setCategory(key)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${category===key ? 'text-white' : 'text-zinc-500 bg-zinc-800 hover:text-white'}`} style={category===key ? { backgroundColor:`${catColors[key]}25`, color:catColors[key] } : {}}>{label}</button>))}</div></div>
-          </div>
-          <div><h3 className="text-white font-bold mb-3">فیلدهای فرم</h3>
-            <div className="space-y-2 mb-4">
-              {fields.map((f, i) => (<div key={i} className="flex items-center gap-2 bg-zinc-800/50 rounded-xl px-3 py-2"><span className="text-lg">{typeIcons[f.type] || '📄'}</span><span className="flex-1 text-white text-sm">{f.label}</span><span className="text-zinc-500 text-xs">{f.type} {f.required ? '• الزامی' : ''}</span><button onClick={() => removeField(i)} className="text-red-400 hover:text-red-300 text-xs">✕</button></div>))}
-              {fields.length === 0 && <p className="text-zinc-600 text-sm text-center py-4">هنوز فیلدی اضافه نشده</p>}
+            <div>
+              <label className="block text-sm text-zinc-400 mb-1">
+                عنوان صفحه
+              </label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50"
+              />
             </div>
-            <div className="bg-zinc-800/30 rounded-xl p-3 space-y-2">
-              <p className="text-zinc-400 text-xs font-medium">افزودن فیلد جدید</p>
+            <div>
+              <label className="block text-sm text-zinc-400 mb-1">
+                کارخانه
+              </label>
+              <select
+                value={selectedFactory}
+                onChange={(e) => setSelectedFactory(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50"
+              >
+                {initialFactories.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-zinc-400 mb-1">دسته</label>
               <div className="flex gap-2">
-                <input value={newField.label} onChange={e => setNewField(prev => ({...prev, label: e.target.value, name: e.target.value.replace(/\s+/g,'_')}))} placeholder="برچسب فیلد" className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-purple-500/50" />
-                <select value={newField.type} onChange={e => setNewField(prev => ({...prev, type: e.target.value as any}))} className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-white text-sm outline-none">{Object.entries(typeIcons).map(([key, icon]) => <option key={key} value={key}>{icon} {key}</option>)}</select>
-                <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer"><input type="checkbox" checked={newField.required} onChange={e => setNewField(prev => ({...prev, required: e.target.checked}))} className="accent-purple-500" />الزامی</label>
-                <button onClick={addField} className="bg-purple-600 hover:bg-purple-700 text-white px-3 rounded-lg text-xs transition-colors">+</button>
+                {(
+                  Object.entries(catLabels) as [CustomPageCategory, string][]
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setCategory(key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${category === key ? "text-white" : "text-zinc-500 bg-zinc-800 hover:text-white"}`}
+                    style={
+                      category === key
+                        ? {
+                            backgroundColor: `${catColors[key]}25`,
+                            color: catColors[key],
+                          }
+                        : {}
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
-          <button onClick={handleSave} disabled={!title || fields.length === 0} className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${saved ? 'bg-green-600 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}>{saved ? '✓ ذخیره شد' : 'ذخیره صفحه'}</button>
+          <div>
+            <h3 className="text-white font-bold mb-3">فیلدهای فرم</h3>
+            <div className="space-y-2 mb-4">
+              {fields.map((f, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 bg-zinc-800/50 rounded-xl px-3 py-2"
+                >
+                  <span className="text-lg">{typeIcons[f.type] || "📄"}</span>
+                  <span className="flex-1 text-white text-sm">{f.label}</span>
+                  <span className="text-zinc-500 text-xs">
+                    {f.type} {f.required ? "• الزامی" : ""}
+                  </span>
+                  <button
+                    onClick={() => removeField(i)}
+                    className="text-red-400 hover:text-red-300 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {fields.length === 0 && (
+                <p className="text-zinc-600 text-sm text-center py-4">
+                  هنوز فیلدی اضافه نشده
+                </p>
+              )}
+            </div>
+            <div className="bg-zinc-800/30 rounded-xl p-3 space-y-2">
+              <p className="text-zinc-400 text-xs font-medium">
+                افزودن فیلد جدید
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={newField.label}
+                  onChange={(e) =>
+                    setNewField((prev) => ({
+                      ...prev,
+                      label: e.target.value,
+                      name: e.target.value.replace(/\s+/g, "_"),
+                    }))
+                  }
+                  placeholder="برچسب فیلد"
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-purple-500/50"
+                />
+                <select
+                  value={newField.type}
+                  onChange={(e) =>
+                    setNewField((prev) => ({
+                      ...prev,
+                      type: e.target.value as any,
+                    }))
+                  }
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-white text-sm outline-none"
+                >
+                  {Object.entries(typeIcons).map(([key, icon]) => (
+                    <option key={key} value={key}>
+                      {icon} {key}
+                    </option>
+                  ))}
+                </select>
+                <label className="flex items-center gap-1 text-xs text-zinc-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newField.required}
+                    onChange={(e) =>
+                      setNewField((prev) => ({
+                        ...prev,
+                        required: e.target.checked,
+                      }))
+                    }
+                    className="accent-purple-500"
+                  />
+                  الزامی
+                </label>
+                <button
+                  onClick={addField}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 rounded-lg text-xs transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={!title || fields.length === 0}
+            className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${saved ? "bg-green-600 text-white" : "bg-purple-600 hover:bg-purple-700 text-white"}`}
+          >
+            {saved ? "✓ ذخیره شد" : "ذخیره صفحه"}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function LicensesPage() {
-  const [licenses, setLicenses] = useState(initialLicenses);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-  const [factories] = useState(initialFactories);
-
-  const columns: Column<any>[] = [
-    { key:'licenseKey', title:'کلید لایسنس', render:(v) => <span className="font-mono text-xs text-blue-400">{v}</span> },
-    { key:'tenantId', title:'کارخانه', render:(v) => { const f = factories.find(t => t.id === v); return f?.name || v; }},
-    { key:'planName', title:'پلن' },
-    { key:'modules', title:'ماژول‌ها', render:(v) => <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded">{v.length} ماژول</span> },
-    { key:'userLimit', title:'سقف کاربر' },
-    { key:'expiryDate', title:'انقضا' },
-    { key:'status', title:'وضعیت', render:(v) => { const c = v==='active'?'#10b981':v==='expired'?'#ef4444':'#6b7280'; return <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor:`${c}20`, color:c }}>{v==='active'?'فعال':v==='expired'?'منقضی':'لغو شده'}</span>; }},
-  ];
-
-  const formFields: FormField[] = [
-    { name:'licenseKey', label:'کلید لایسنس', type:'text', required:true },
-    { name:'tenantId', label:'کارخانه', type:'select', required:true, options: factories.map(f => ({ value: f.id, label: f.name })) },
-    { name:'planName', label:'پلن', type:'text', required:true },
-    { name:'userLimit', label:'سقف کاربر', type:'number', required:true },
-    { name:'expiryDate', label:'تاریخ انقضا', type:'date', required:true },
-    { name:'status', label:'وضعیت', type:'select', options:[{ value:'active', label:'فعال' },{ value:'expired', label:'منقضی' }] },
-  ];
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-white">مدیریت لایسنس‌ها</h1><p className="text-zinc-500 text-sm">صدور و مدیریت کلیدهای مجوز برای هر کارخانه</p></div>
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {[
-          { label:'کل لایسنس‌ها', value:licenses.length, color:'#3b82f6' },
-          { label:'فعال', value:licenses.filter(l => l.status === 'active').length, color:'#10b981' },
-          { label:'منقضی', value:licenses.filter(l => l.status === 'expired').length, color:'#ef4444' },
-          { label:'کارخانه تحت پوشش', value:new Set(licenses.map(l => l.tenantId)).size, color:'#f59e0b' },
-        ].map(s => (
-          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-            <p className="text-2xl font-black text-white">{s.value}</p>
-            <p className="text-zinc-500 text-xs mt-1">{s.label}</p>
-          </div>
-        ))}
-      </div>
-      <DataTable data={licenses} columns={columns} title="لایسنس‌ها" icon={<Key size={18} className="text-amber-500" />}
-        onAdd={() => { setEditing(null); setShowModal(true); }} onEdit={(l: any) => { setEditing(l); setShowModal(true); }} addLabel="لایسنس جدید" />
-      <FormModal isOpen={showModal} onClose={() => setShowModal(false)}
-        onSubmit={(d: any) => { if (editing) { setLicenses(prev => prev.map(l => l.id === editing.id ? { ...l, ...d } : l)); } else { setLicenses(prev => [...prev, { id: uid('LIC-'), ...d, modules: [] }]); } setShowModal(false); }}
-        title={editing ? 'ویرایش لایسنس' : 'لایسنس جدید'} fields={formFields} initialData={editing || {}} />
-    </div>
-  );
-}
-
 function ModulesPage() {
   const [factories, setFactories] = useState(initialFactories);
-  const [activeFactoryId, setActiveFactoryId] = useState(factories[0]?.id || '');
-  const factory = factories.find(f => f.id === activeFactoryId);
-  const allModules = modules.filter(m => m.id !== 'core' && m.id !== 'superadmin');
+  const [activeFactoryId, setActiveFactoryId] = useState(
+    factories[0]?.id || "",
+  );
+  const factory = factories.find((f) => f.id === activeFactoryId);
+  const allModules = modules.filter(
+    (m) => m.id !== "core" && m.id !== "superadmin",
+  );
 
   const toggleModule = (moduleId: string) => {
-    setFactories(prev => prev.map(f => f.id === activeFactoryId ? { ...f, enabledModules: f.enabledModules.includes(moduleId) ? f.enabledModules.filter(m => m !== moduleId) : [...f.enabledModules, moduleId] } : f));
+    setFactories((prev) =>
+      prev.map((f) =>
+        f.id === activeFactoryId
+          ? {
+              ...f,
+              enabledModules: f.enabledModules.includes(moduleId)
+                ? f.enabledModules.filter((m) => m !== moduleId)
+                : [...f.enabledModules, moduleId],
+            }
+          : f,
+      ),
+    );
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div><h1 className="text-xl font-bold text-white">فعال‌سازی ماژول‌ها</h1><p className="text-zinc-500 text-sm">انتخاب کنید هر کارخانه چه ماژول‌هایی فعال داشته باشد</p></div>
+      <div>
+        <h1 className="text-xl font-bold text-white">فعال‌سازی ماژول‌ها</h1>
+        <p className="text-zinc-500 text-sm">
+          انتخاب کنید هر کارخانه چه ماژول‌هایی فعال داشته باشد
+        </p>
+      </div>
       <div className="flex gap-2 flex-wrap">
-        {factories.map(f => (
-          <button key={f.id} onClick={() => setActiveFactoryId(f.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${activeFactoryId===f.id ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>{f.name}</button>
+        {factories.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setActiveFactoryId(f.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${activeFactoryId === f.id ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+          >
+            {f.name}
+          </button>
         ))}
       </div>
       {factory && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-500 font-black">{factory.code.charAt(0)}</div>
-            <div><h3 className="text-white font-bold">{factory.name}</h3><p className="text-zinc-500 text-xs">{factory.enabledModules.length} از {allModules.length} ماژول فعال</p></div>
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-500 font-black">
+              {factory.code.charAt(0)}
+            </div>
+            <div>
+              <h3 className="text-white font-bold">{factory.name}</h3>
+              <p className="text-zinc-500 text-xs">
+                {factory.enabledModules.length} از {allModules.length} ماژول
+                فعال
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {allModules.map(mod => {
+            {allModules.map((mod) => {
               const isOn = factory.enabledModules.includes(mod.id);
               return (
-                <div key={mod.id} className={`bg-zinc-800/50 border rounded-xl p-3 flex items-center justify-between ${isOn ? 'border-green-500/30' : 'border-zinc-700'}`}>
+                <div
+                  key={mod.id}
+                  className={`bg-zinc-800/50 border rounded-xl p-3 flex items-center justify-between ${isOn ? "border-green-500/30" : "border-zinc-700"}`}
+                >
                   <div className="flex items-center gap-2">
-                    <mod.icon size={16} style={{ color: isOn ? mod.color : '#52525b' }} />
-                    <span className={isOn ? 'text-white text-sm' : 'text-zinc-500 text-sm'}>{mod.title}</span>
+                    <mod.icon
+                      size={16}
+                      style={{ color: isOn ? mod.color : "#52525b" }}
+                    />
+                    <span
+                      className={
+                        isOn ? "text-white text-sm" : "text-zinc-500 text-sm"
+                      }
+                    >
+                      {mod.title}
+                    </span>
                   </div>
-                  <button onClick={() => toggleModule(mod.id)}
-                    className={`relative w-10 h-5 rounded-full transition-all ${isOn ? 'bg-green-600' : 'bg-zinc-600'}`}>
-                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isOn ? 'left-[22px]' : 'left-[2px]'}`} />
+                  <button
+                    onClick={() => toggleModule(mod.id)}
+                    className={`relative w-10 h-5 rounded-full transition-all ${isOn ? "bg-green-600" : "bg-zinc-600"}`}
+                  >
+                    <div
+                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isOn ? "left-[22px]" : "left-[2px]"}`}
+                    />
                   </button>
                 </div>
               );
             })}
           </div>
-          <p className="text-zinc-600 text-xs mt-4">تغییرات به‌صورت لحظه‌ای اعمال می‌شوند و کاربران آن کارخانه در لاگین بعدی ماژول‌های جدید را می‌بینند.</p>
+          <p className="text-zinc-600 text-xs mt-4">
+            تغییرات به‌صورت لحظه‌ای اعمال می‌شوند و کاربران آن کارخانه در لاگین
+            بعدی ماژول‌های جدید را می‌بینند.
+          </p>
         </div>
       )}
     </div>
@@ -335,15 +891,33 @@ function ModulesPage() {
 function HealthPage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div><h1 className="text-xl font-bold text-white">مانیتورینگ سلامت سیستم</h1><p className="text-zinc-500 text-sm">وضعیت سرورها و سرویس‌های ابری</p></div>
+      <div>
+        <h1 className="text-xl font-bold text-white">مانیتورینگ سلامت سیستم</h1>
+        <p className="text-zinc-500 text-sm">وضعیت سرورها و سرویس‌های ابری</p>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label:'CPU', value:34, icon:Cpu, color:'#10b981' }, { label:'RAM', value:52, icon:Cpu, color:'#f59e0b' },
-          { label:'Disk', value:68, icon:Cpu, color:'#f59e0b' }, { label:'Database', value:22, icon:Cpu, color:'#10b981' },
-        ].map(item => (
-          <div key={item.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3"><item.icon size={24} style={{ color: item.color }} /><span className="text-3xl font-black text-white">{item.value}%</span></div>
-            <div className="w-full bg-zinc-700 rounded-full h-3"><div className="h-3 rounded-full transition-all" style={{ width:`${item.value}%`, backgroundColor:item.color }} /></div>
+          { label: "CPU", value: 34, icon: Cpu, color: "#10b981" },
+          { label: "RAM", value: 52, icon: Cpu, color: "#f59e0b" },
+          { label: "Disk", value: 68, icon: Cpu, color: "#f59e0b" },
+          { label: "Database", value: 22, icon: Cpu, color: "#10b981" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <item.icon size={24} style={{ color: item.color }} />
+              <span className="text-3xl font-black text-white">
+                {item.value}%
+              </span>
+            </div>
+            <div className="w-full bg-zinc-700 rounded-full h-3">
+              <div
+                className="h-3 rounded-full transition-all"
+                style={{ width: `${item.value}%`, backgroundColor: item.color }}
+              />
+            </div>
             <p className="text-zinc-500 text-sm mt-2">{item.label}</p>
           </div>
         ))}
@@ -352,14 +926,25 @@ function HealthPage() {
         <h3 className="text-white font-bold mb-4">سرویس‌های ابری</h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
           {[
-            { name:'API Gateway', status:'online', uptime:'۹۹.۹۹%' }, { name:'Auth Service', status:'online', uptime:'۹۹.۹۷%' },
-            { name:'Database Cluster', status:'online', uptime:'۹۹.۹۵%' }, { name:'File Storage', status:'online', uptime:'۹۹.۹۹%' },
-            { name:'Notification', status:'online', uptime:'۹۹.۸۸%' }, { name:'AI Inference', status:'online', uptime:'۹۸.۵۰%' },
-            { name:'PLC Bridge', status:'degraded', uptime:'۹۵.۲۰%' }, { name:'Realtime Stream', status:'online', uptime:'۹۹.۹۰%' },
-          ].map(s => (
+            { name: "API Gateway", status: "online", uptime: "۹۹.۹۹%" },
+            { name: "Auth Service", status: "online", uptime: "۹۹.۹۷%" },
+            { name: "Database Cluster", status: "online", uptime: "۹۹.۹۵%" },
+            { name: "File Storage", status: "online", uptime: "۹۹.۹۹%" },
+            { name: "Notification", status: "online", uptime: "۹۹.۸۸%" },
+            { name: "AI Inference", status: "online", uptime: "۹۸.۵۰%" },
+            { name: "PLC Bridge", status: "degraded", uptime: "۹۵.۲۰%" },
+            { name: "Realtime Stream", status: "online", uptime: "۹۹.۹۰%" },
+          ].map((s) => (
             <div key={s.name} className="bg-zinc-800/30 rounded-xl p-3">
-              <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${s.status==='online'?'bg-green-500':s.status==='degraded'?'bg-amber-500':'bg-red-500'}`} /><span className="text-white text-xs">{s.name}</span></div>
-              <p className="text-zinc-500 text-[10px] mt-1">Uptime: {s.uptime}</p>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${s.status === "online" ? "bg-green-500" : s.status === "degraded" ? "bg-amber-500" : "bg-red-500"}`}
+                />
+                <span className="text-white text-xs">{s.name}</span>
+              </div>
+              <p className="text-zinc-500 text-[10px] mt-1">
+                Uptime: {s.uptime}
+              </p>
             </div>
           ))}
         </div>
@@ -370,32 +955,75 @@ function HealthPage() {
 
 function MarketplacePage() {
   const [items, setItems] = useState([
-    { name:'تم صنعتی آبی', type:'Theme', price:'رایگان', installed:true },
-    { name:'ویجت OEE پیشرفته', type:'Widget', price:'۵۰۰,۰۰۰ تومان', installed:false },
-    { name:'پک خودروسازی', type:'Industry Pack', price:'۲,۰۰۰,۰۰۰ تومان', installed:false },
-    { name:'عامل AI تولید', type:'AI Agent', price:'۱,۰۰۰,۰۰۰ تومان', installed:true },
-    { name:'گزارش‌ساز پیشرفته', type:'Plugin', price:'۸۰۰,۰۰۰ تومان', installed:false },
-    { name:'داشبورد مدیرعامل', type:'Dashboard', price:'رایگان', installed:true },
+    { name: "تم صنعتی آبی", type: "Theme", price: "رایگان", installed: true },
+    {
+      name: "ویجت OEE پیشرفته",
+      type: "Widget",
+      price: "۵۰۰,۰۰۰ تومان",
+      installed: false,
+    },
+    {
+      name: "پک خودروسازی",
+      type: "Industry Pack",
+      price: "۲,۰۰۰,۰۰۰ تومان",
+      installed: false,
+    },
+    {
+      name: "عامل AI تولید",
+      type: "AI Agent",
+      price: "۱,۰۰۰,۰۰۰ تومان",
+      installed: true,
+    },
+    {
+      name: "گزارش‌ساز پیشرفته",
+      type: "Plugin",
+      price: "۸۰۰,۰۰۰ تومان",
+      installed: false,
+    },
+    {
+      name: "داشبورد مدیرعامل",
+      type: "Dashboard",
+      price: "رایگان",
+      installed: true,
+    },
   ]);
 
   const toggleInstall = (idx: number) => {
-    setItems(prev => prev.map((item, i) => i === idx ? { ...item, installed: !item.installed } : item));
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === idx ? { ...item, installed: !item.installed } : item,
+      ),
+    );
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div><h1 className="text-xl font-bold text-white">مارکت‌پلیس</h1><p className="text-zinc-500 text-sm">افزونه‌ها، تم‌ها و پک‌های صنعتی</p></div>
+      <div>
+        <h1 className="text-xl font-bold text-white">مارکت‌پلیس</h1>
+        <p className="text-zinc-500 text-sm">افزونه‌ها، تم‌ها و پک‌های صنعتی</p>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item, i) => (
-          <div key={item.name} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+          <div
+            key={item.name}
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5"
+          >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded">{item.type}</span>
-              {item.installed && <CheckCircle2 size={16} className="text-green-500" />}
+              <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded">
+                {item.type}
+              </span>
+              {item.installed && (
+                <CheckCircle2 size={16} className="text-green-500" />
+              )}
             </div>
             <h3 className="text-white font-bold">{item.name}</h3>
             <p className="text-zinc-500 text-sm mt-1">{item.price}</p>
-            <button onClick={() => toggleInstall(i)}
-              className={`w-full mt-4 py-2 rounded-xl text-sm font-medium transition-all ${item.installed ? 'bg-zinc-800 text-zinc-400' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>{item.installed ? 'نصب شده' : 'نصب'}</button>
+            <button
+              onClick={() => toggleInstall(i)}
+              className={`w-full mt-4 py-2 rounded-xl text-sm font-medium transition-all ${item.installed ? "bg-zinc-800 text-zinc-400" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+            >
+              {item.installed ? "نصب شده" : "نصب"}
+            </button>
           </div>
         ))}
       </div>

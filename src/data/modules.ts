@@ -54,7 +54,6 @@ export const modules: ModuleDef[] = [
     pages: [
       { id: 'dashboard', title: 'داشبورد', icon: LayoutDashboard },
       { id: 'tenants', title: 'کارخانه‌ها', icon: Building2 },
-      { id: 'licenses', title: 'لایسنس‌ها', icon: Key },
       { id: 'modules', title: 'ماژول‌ها', icon: Blocks },
       { id: 'health', title: 'سلامت سیستم', icon: Activity },
       { id: 'marketplace', title: 'مارکت‌پلیس', icon: Store },
