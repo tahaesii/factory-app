@@ -203,7 +203,6 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  defaultChecked
                   checked={isChecked} 
                   onChange={(e) => setIsChecked(e.target.checked)} 
                   className="w-4 h-4 rounded"

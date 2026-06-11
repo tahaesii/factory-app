@@ -63,8 +63,7 @@ export default function OTPPage({
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const { login , loading, error } = useAuthStore();
-
+  const { login, loading, error } = useAuthStore();
 
   useEffect(() => {
     if (inputRefs.current[0]) {
@@ -78,6 +77,18 @@ export default function OTPPage({
       return () => clearTimeout(timer);
     }
   }, [timeLeft]);
+
+  useEffect(() => {
+    const otpValue = otpCode.join("");
+
+    if (
+      otpValue.length === 6 &&
+      otpCode.every((digit) => digit !== "") &&
+      !isVerifying
+    ) {
+      handleAutoSubmit();
+    }
+  }, [otpCode]);
 
   const handleOtpChange = (index: number, value: string) => {
     let newValue = allowOnlyNumbers(value);
@@ -136,45 +147,38 @@ export default function OTPPage({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleAutoSubmit = async () => {
     const otpValue = otpCode.join("");
     const englishOtp = convertPersianToEnglish(otpValue);
 
-    if (englishOtp.length !== 6) {
-      toast.error("کد تایید باید ۶ رقم باشد");
-      return;
-    }
+    if (englishOtp.length !== 6) return;
 
     setIsVerifying(true);
 
-    setTimeout(async () => {
-      if (englishOtp !== TEST_OTP) {
-        setIsVerifying(false);
-        toast.error("کد تایید اشتباه است");
-        return;
-      }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
+    if (englishOtp !== TEST_OTP) {
       setIsVerifying(false);
+      toast.error("کد تایید اشتباه است");
+      return;
+    }
+
+    try {
+      await login(nationalCode, phoneNumber, rememberMe);
 
       toast.success("ورود موفقیت‌آمیز بود");
 
-      await login(nationalCode, phoneNumber, rememberMe);
+      onSuccess?.();
+    } catch (error) {
+      toast.error("خطا در ورود");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
-    //   dispatch(
-    //     login({
-    //       role: "factoryAdmin",
-    //       phoneNumber,
-    //       nationalCode,
-    //       rememberMe,
-    //     }),
-    //   );
-
-      setTimeout(() => {
-        onSuccess?.();
-      }, 1000);
-    }, 1000);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleAutoSubmit();
   };
   const handleResendCode = async () => {
     setIsResending(true);
@@ -223,38 +227,24 @@ export default function OTPPage({
             border: "1px solid var(--color-border)",
           }}
         >
-          <h2
-            className="text-xl font-bold mb-1 text-center"
-          >
+          <h2 className="text-xl font-bold mb-1 text-center">
             تایید دو مرحله‌ای
           </h2>
 
-          <p
-            className="text-sm mb-6 text-center"
-          >
+          <p className="text-sm mb-6 text-center">
             کد ارسال شده به شماره موبایل را وارد کنید
           </p>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
               <div className="text-center">
-                <p
-                  className="text-sm"
-                >
-                  کد تایید به شماره زیر ارسال شد
-                </p>
+                <p className="text-sm">کد تایید به شماره زیر ارسال شد</p>
 
-                <p
-                  className="font-bold mt-2"
-                >
-                  {phoneNumber}
-                </p>
+                <p className="font-bold mt-2">{phoneNumber}</p>
               </div>
 
               <div>
-                <label
-                  className="block text-sm mb-2"
-                >
+                <label className="block text-sm mb-2">
                   کد تایید <span className="text-red-500">*</span>
                 </label>
 
@@ -286,18 +276,12 @@ export default function OTPPage({
                   ))}
                 </div>
 
-                <p
-                  className="text-xs mt-3 text-center"
-                >
-                  کد تایید ۶ رقمی است
-                </p>
+                <p className="text-xs mt-3 text-center">کد تایید ۶ رقمی است</p>
               </div>
 
               <div className="text-center">
                 {timeLeft > 0 ? (
-                  <p
-                    className="text-sm"
-                  >
+                  <p className="text-sm">
                     زمان باقی‌مانده: {formatTime(timeLeft)}
                   </p>
                 ) : (
