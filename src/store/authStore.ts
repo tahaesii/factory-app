@@ -43,30 +43,56 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   loading: false,
   error: null,
+  // login: async (username: string, password: string) => {
+  //   set({ loading: true, error: null });
+  //   try {
+  //     const res = await fetch("http://87.107.146.212:8080/api/auth/login", {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ username, password }),
+  //     });
+  //     if (!res.ok) {
+  //       const err = await res.json().catch(() => ({}));
+  //       set({ loading: false, error: err.message || 'خطا در ورود' });
+  //       return false;
+  //     }
+  //     const data = await res.json();
+  //     set({
+  //       user: data.user,
+  //       token: data.accessToken,
+  //       isAuthenticated: true,
+  //       loading: false,
+  //       error: null,
+  //     });
+  //     return true;
+  //   } catch {
+  //     set({ loading: false, error: 'خطا در اتصال به سرور' });
+  //     return false;
+  //   }
+  // },
   login: async (username: string, password: string) => {
     set({ loading: true, error: null });
+
     try {
-      const res = await fetch("http://87.107.146.212:8080/api/auth/login", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        set({ loading: false, error: err.message || 'خطا در ورود' });
-        return false;
-      }
-      const data = await res.json();
+      await new Promise((res) => setTimeout(res, 500));
+
       set({
-        user: data.user,
-        token: data.accessToken,
+        user: {
+          id: "1",
+          name: "Demo User",
+          username,
+          email: "demo@local.com",
+          role: "superadmin",
+        },
+        token: "mock-token",
         isAuthenticated: true,
         loading: false,
         error: null,
       });
+
       return true;
     } catch {
-      set({ loading: false, error: 'خطا در اتصال به سرور' });
+      set({ loading: false, error: "Mock login failed" });
       return false;
     }
   },
