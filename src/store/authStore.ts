@@ -5,11 +5,12 @@ export type UserRole = 'superadmin' | 'admin' | 'operator' | 'supervisor' | 'mai
 
 export interface User {
   id: string;
+  nationalCode:string;
   name: string;
   username: string;
   email: string;
   role: UserRole;
-  phone?: string;
+  phoneNumber: string;
   departmentId?: string;
   factoryId?: string;
 }
@@ -20,7 +21,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (nationalCode: string, phoneNumber: string, rememberMe:boolean) => Promise<boolean>;
   logout: () => void;
   canViewModule: (moduleId: string) => boolean;
 }
@@ -70,7 +71,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   //     return false;
   //   }
   // },
-  login: async (username: string, password: string) => {
+  login: async (nationalCode: string, phoneNumber: string) => {
     set({ loading: true, error: null });
 
     try {
@@ -80,7 +81,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: {
           id: "1",
           name: "Demo User",
-          username,
+          username: 'reza',
+          nationalCode,
+          phoneNumber,
           email: "demo@local.com",
           role: "superadmin",
         },

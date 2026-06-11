@@ -1,7 +1,7 @@
+import { useState } from "react";
 import LoginForm from "@/components/LoginForm";
 import LoginBranding from "@/components/LoginBranding";
 import {
-  Factory,
   Cpu,
   Shield,
   Zap,
@@ -11,6 +11,7 @@ import {
   Cog,
   Layers,
 } from "lucide-react";
+import OTPPage from "./OtpPage";
 
 const feat = [
   { icon: Cpu, label: "AI-Powered Analytics" },
@@ -24,6 +25,21 @@ const feat = [
 ];
 
 export default function LoginPage() {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [showOtp, setShowOtp] = useState(false);
+  const [nationalCode, setNationalCode] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const handleLoginSuccess = (
+  phone: string,
+  nationalCode: string,
+  rememberMe: boolean
+) => {
+  setPhoneNumber(phone);
+  setNationalCode(nationalCode);
+  setRememberMe(rememberMe);
+  setShowOtp(true);
+};
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
@@ -39,7 +55,17 @@ export default function LoginPage() {
       <div className="absolute bottom-40 right-10 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl" />
       <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl" />
       <div className="w-full lg:w-1/2 items-center justify-center relative z-10">
-        <LoginForm />
+      {showOtp ? (
+        <OTPPage
+          phoneNumber={phoneNumber}
+          nationalCode={nationalCode}
+          rememberMe={rememberMe}
+          onBack={() => setShowOtp(false)}
+        />
+      ) : (
+        <LoginForm onSuccess={handleLoginSuccess}/>
+      )}
+        
       </div>
       <LoginBranding
         title="Revolutionizing"
