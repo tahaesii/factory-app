@@ -1,11 +1,17 @@
-
-import { create } from 'zustand';
-
-export type UserRole = 'superadmin' | 'admin' | 'operator' | 'supervisor' | 'maintenance' | 'engineer' | 'viewer';
+import { authService } from "@/services/authService";
+import { create } from "zustand";
+export type UserRole =
+  | "superadmin"
+  | "admin"
+  | "operator"
+  | "supervisor"
+  | "maintenance"
+  | "engineer"
+  | "viewer";
 
 export interface User {
   id: string;
-  nationalCode:string;
+  nationalCode: string;
   name: string;
   username: string;
   email: string;
@@ -21,22 +27,96 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  login: (nationalCode: string, phoneNumber: string, rememberMe:boolean) => Promise<boolean>;
+  sendOtp: (
+    nationalCode: string,
+    phoneNumber: string,
+  ) => Promise<SendOtpResult>;
+  login: (
+  nationalCode: string,
+  phoneNumber: string,
+  code: string,
+  rememberMe: boolean,
+) => Promise<boolean>;
   logout: () => void;
   canViewModule: (moduleId: string) => boolean;
 }
 
 const ROLE_MODULES: Record<string, string[]> = {
-  superadmin: ['core','superadmin','org','workflow','dashboard-builder','command-center','idp','mes','alerts','incidents','cmms','qms','wms','srm','hse','hrm','dms','finance','lims','ai','report-builder','form-builder','marketplace','nocode','settings'],
-  admin: ['core','org','workflow','dashboard-builder','command-center','idp','mes','alerts','incidents','cmms','qms','wms','srm','hse','hrm','dms','finance','lims','ai','report-builder','form-builder','settings'],
-  manager: ['command-center','mes','idp','alerts','cmms','qms','wms','srm','hse','hrm','lims'],
-  supervisor: ['mes','alerts','incidents','cmms','qms','wms','hse'],
-  operator: ['mes','idp','cmms','qms','wms','hse'],
-  maintenance: ['cmms'],
-  engineer: ['idp','mes','alerts','monitoring','dashboard-builder'],
-  viewer: ['command-center','dashboard-builder'],
+  superadmin: [
+    "core",
+    "superadmin",
+    "org",
+    "workflow",
+    "dashboard-builder",
+    "command-center",
+    "idp",
+    "mes",
+    "alerts",
+    "incidents",
+    "cmms",
+    "qms",
+    "wms",
+    "srm",
+    "hse",
+    "hrm",
+    "dms",
+    "finance",
+    "lims",
+    "ai",
+    "report-builder",
+    "form-builder",
+    "marketplace",
+    "nocode",
+    "settings",
+  ],
+  admin: [
+    "core",
+    "org",
+    "workflow",
+    "dashboard-builder",
+    "command-center",
+    "idp",
+    "mes",
+    "alerts",
+    "incidents",
+    "cmms",
+    "qms",
+    "wms",
+    "srm",
+    "hse",
+    "hrm",
+    "dms",
+    "finance",
+    "lims",
+    "ai",
+    "report-builder",
+    "form-builder",
+    "settings",
+  ],
+  manager: [
+    "command-center",
+    "mes",
+    "idp",
+    "alerts",
+    "cmms",
+    "qms",
+    "wms",
+    "srm",
+    "hse",
+    "hrm",
+    "lims",
+  ],
+  supervisor: ["mes", "alerts", "incidents", "cmms", "qms", "wms", "hse"],
+  operator: ["mes", "idp", "cmms", "qms", "wms", "hse"],
+  maintenance: ["cmms"],
+  engineer: ["idp", "mes", "alerts", "monitoring", "dashboard-builder"],
+  viewer: ["command-center", "dashboard-builder"],
 };
 
+interface SendOtpResult {
+  success: boolean;
+  error: string | null;
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -44,62 +124,80 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   loading: false,
   error: null,
-  // login: async (username: string, password: string) => {
-  //   set({ loading: true, error: null });
-  //   try {
-  //     const res = await fetch("http://87.107.146.212:8080/api/auth/login", {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ username, password }),
-  //     });
-  //     if (!res.ok) {
-  //       const err = await res.json().catch(() => ({}));
-  //       set({ loading: false, error: err.message || 'خطا در ورود' });
-  //       return false;
-  //     }
-  //     const data = await res.json();
-  //     set({
-  //       user: data.user,
-  //       token: data.accessToken,
-  //       isAuthenticated: true,
-  //       loading: false,
-  //       error: null,
-  //     });
-  //     return true;
-  //   } catch {
-  //     set({ loading: false, error: 'خطا در اتصال به سرور' });
-  //     return false;
-  //   }
-  // },
-  login: async (nationalCode: string, phoneNumber: string) => {
+  sendOtp: async (nationalCode: string, phoneNumber: string) => {
     set({ loading: true, error: null });
 
     try {
-      await new Promise((res) => setTimeout(res, 500));
+      await authService.sendOtp(nationalCode, phoneNumber);
+
+      set({ loading: false });
+
+      return {
+        success: true,
+        error: null,
+      };
+    } catch (error: any) {
+      console.log(error.response);
+      const message = error.response?.data?.message || "خطا در ارسال کد";
 
       set({
-        user: {
-          id: "1",
-          name: "Demo User",
-          username: 'reza',
-          nationalCode,
-          phoneNumber,
-          email: "demo@local.com",
-          role: "superadmin",
-        },
-        token: "mock-token",
-        isAuthenticated: true,
         loading: false,
-        error: null,
+        error: message,
       });
 
-      return true;
-    } catch {
-      set({ loading: false, error: "Mock login failed" });
-      return false;
+      return {
+        success: false,
+        error: message,
+      };
     }
   },
-  logout: () => set({ user: null, token: null, isAuthenticated: false, error: null }),
+  login: async (
+  nationalCode: string,
+  phoneNumber: string,
+  code: string,
+  rememberMe: boolean
+) => {
+  set({ loading: true, error: null });
+
+  try {
+    const data = await authService.verifyOtp(
+      nationalCode,
+      phoneNumber,
+      code,
+      rememberMe
+    );
+
+    set({
+      user: data.user,
+      token: data.access_token,
+      isAuthenticated: true,
+      loading: false,
+      error: null,
+    });
+
+    if (rememberMe) {
+      localStorage.setItem(
+        "token",
+        data.access_token
+      );
+    }
+
+    return true;
+  } catch (error: any) {
+    const message =
+      error.response?.data?.message ||
+      "خطا در ورود";
+
+    set({
+      loading: false,
+      error: message,
+    });
+
+    return false;
+  }
+},
+  logout: () =>
+    set({ user: null, token: null, isAuthenticated: false, error: null }),
   canViewModule: (moduleId: string) => {
     const user = get().user;
     if (!user) return false;

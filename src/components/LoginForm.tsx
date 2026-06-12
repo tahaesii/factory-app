@@ -52,8 +52,8 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const { sendOtp, loading } = useAuthStore();
 
   const nationalCodeRef = useRef<HTMLInputElement>(null);
   const phoneNumberRef = useRef<HTMLInputElement>(null);
@@ -80,38 +80,34 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     const nationalCodePersian = nationalCodeRef.current?.value || "";
     const phoneNumberPersian = phoneNumberRef.current?.value || "";
 
     const nationalCode = convertPersianToEnglish(nationalCodePersian);
     const phoneNumber = convertPersianToEnglish(phoneNumberPersian);
+
     if (nationalCode.length !== 10) {
       toast.error("کد ملی باید ۱۰ رقم باشد");
-      setIsLoading(false);
       return;
     }
 
     if (phoneNumber.length !== 11) {
       toast.error("شماره تلفن باید ۱۱ رقم باشد");
-      setIsLoading(false);
       return;
     }
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    const result = await sendOtp(nationalCode, phoneNumber);
 
+    if (result.success) {
       toast.success("کد تایید برای شما ارسال شد");
-
       if (onSuccess) {
         const persianPhoneNumber = convertEnglishToPersian(phoneNumber);
+
         onSuccess(persianPhoneNumber, nationalCode, isChecked);
       }
-    } catch (error) {
-      toast.error("خطا در ارسال کد تایید");
-    } finally {
-      setIsLoading(false);
+    } else {
+      toast.error(result.error);
     }
   };
 
@@ -203,8 +199,8 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={isChecked} 
-                  onChange={(e) => setIsChecked(e.target.checked)} 
+                  checked={isChecked}
+                  onChange={(e) => setIsChecked(e.target.checked)}
                   className="w-4 h-4 rounded"
                   style={{ accentColor: "#00C2FF" }}
                 />
@@ -219,10 +215,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full py-3.5 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-[#00C2FF] text-[#020817] shadow-[0_4px_16px_#00C2FF25] hover:bg-[#00a6d6] cursor-pointer"
             >
-              {isLoading ? (
+              {loading ? (
                 <div className="w-5 h-5 border-2 border-[#02081730] border-t-[#020817] rounded-full animate-spin" />
               ) : (
                 <>

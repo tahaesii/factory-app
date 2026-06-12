@@ -49,21 +49,17 @@ interface OTPPageProps {
   onSuccess?: () => void;
 }
 
-const TEST_OTP = "123456";
-
 export default function OTPPage({
   phoneNumber,
   nationalCode,
   rememberMe,
   onBack,
-  onSuccess,
 }: OTPPageProps) {
   const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(120);
   const [isResending, setIsResending] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const { login, loading, error } = useAuthStore();
+  const { login, sendOtp, loading, error } = useAuthStore();
 
   useEffect(() => {
     if (inputRefs.current[0]) {
@@ -84,7 +80,7 @@ export default function OTPPage({
     if (
       otpValue.length === 6 &&
       otpCode.every((digit) => digit !== "") &&
-      !isVerifying
+      !loading
     ) {
       handleAutoSubmit();
     }
@@ -153,26 +149,16 @@ export default function OTPPage({
 
     if (englishOtp.length !== 6) return;
 
-    setIsVerifying(true);
+    const success = await login(
+      nationalCode,
+      convertPersianToEnglish(phoneNumber),
+      englishOtp,
+      rememberMe,
+    );
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (englishOtp !== TEST_OTP) {
-      setIsVerifying(false);
-      toast.error("کد تایید اشتباه است");
+    if (!success) {
+      toast.error(error || "کد تایید نامعتبر است");
       return;
-    }
-
-    try {
-      await login(nationalCode, phoneNumber, rememberMe);
-
-      toast.success("ورود موفقیت‌آمیز بود");
-
-      onSuccess?.();
-    } catch (error) {
-      toast.error("خطا در ورود");
-    } finally {
-      setIsVerifying(false);
     }
   };
 
@@ -183,7 +169,13 @@ export default function OTPPage({
   const handleResendCode = async () => {
     setIsResending(true);
 
-    console.log("Resending OTP to:", convertPersianToEnglish(phoneNumber));
+    const result = await sendOtp(nationalCode, phoneNumber);
+
+    if (result.success) {
+      toast.success("کد تایید باری دیگر برای شما ارسال شد");
+    } else {
+      toast.error(result.error);
+    }
 
     setTimeout(() => {
       setTimeLeft(120);
@@ -302,7 +294,7 @@ export default function OTPPage({
                   <button
                     type="button"
                     onClick={onBack}
-                    disabled={isVerifying}
+                    disabled={loading}
                     className="w-1/2 py-3.5 rounded-xl font-bold transition-all cursor-pointer"
                     style={{
                       background: "transparent",
@@ -316,12 +308,12 @@ export default function OTPPage({
 
                 <button
                   type="submit"
-                  disabled={isVerifying}
+                  disabled={loading}
                   className={`${
                     onBack ? "w-1/2" : "w-full"
                   } py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 bg-[#00C2FF] text-[#020817] shadow-[0_4px_16px_#00C2FF25] hover:bg-[#00a6d6] cursor-pointer`}
                 >
-                  {isVerifying ? (
+                  {loading ? (
                     <div className="w-5 h-5 border-2 border-[#02081730] border-t-[#020817] rounded-full animate-spin" />
                   ) : (
                     "تایید"
