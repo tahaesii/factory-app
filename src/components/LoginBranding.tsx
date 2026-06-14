@@ -33,7 +33,7 @@ export default function LoginBranding({
       
     >
       {/* Header */}
-      <div className="relative z-10">
+      <div className="relatived">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
             <Factory className="w-7 h-7 text-white" />

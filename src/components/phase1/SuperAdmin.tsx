@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import moment from "jalali-moment";
 import {
   Building2,
   Key,
@@ -19,18 +21,17 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import FormModal, { FormField } from "@/components/ui/FormModal";
 import StatCard, { StatGrid } from "@/components/ui/StatCard";
 import {
-  factories as initialFactories,
-  licenses as initialLicenses,
   customPages as initialPages,
   FactoryData,
 } from "@/data/tenantData";
 import { modules } from "@/data/modules";
-import { uid } from "@/services/dataService";
 import type {
   CustomPage,
   CustomPageField,
   CustomPageCategory,
 } from "@/types/tenant";
+import { factoryService } from "@/services/factoryService";
+import { factoryMetaService } from "@/services/factoryMetaService";
 
 const catIcons: Record<CustomPageCategory, any> = {
   plc: Cpu,
@@ -57,152 +58,216 @@ export function SuperAdminModule() {
   switch (currentPage) {
     case "tenants":
       return <TenantsPage />;
-    case "modules":
-      return <ModulesPage />;
-    case "health":
-      return <HealthPage />;
-    case "marketplace":
-      return <MarketplacePage />;
-    default:
-      return <SuperAdminDashboard onNavigate={setCurrentPage} />;
+    // case "modules":
+    //   return <ModulesPage />;
+    // case "health":
+    //   return <HealthPage />;
+    // case "marketplace":
+    //   return <MarketplacePage />;
+    // default:
+    //   return <SuperAdminDashboard onNavigate={setCurrentPage} />;
   }
 }
 
-function SuperAdminDashboard({
-  onNavigate,
-}: {
-  onNavigate: (p: string) => void;
-}) {
-  const [factories, setFactories] = useState(initialFactories);
-  const activeCount = factories.filter((f) => f.status === "active").length;
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">
-            پنل مدیریت ارشد FactoryOS
-          </h1>
-          <p className="text-zinc-500">
-            مدیریت چند-کارخانه‌ای (Multi-Tenant) — لایسنس، ماژول‌ها، صفحات
-            سفارشی
-          </p>
-        </div>
-      </div>
-      <StatGrid columns={4}>
-        <StatCard
-          title="کارخانه‌های فعال"
-          value={activeCount}
-          unit={`از ${factories.length}`}
-          icon={<Building2 size={22} />}
-          color="#3b82f6"
-        />
-        <StatCard
-          title="مجموع کاربران"
-          value="۱,۲۴۰"
-          unit="نفر"
-          change="+۸۹ این ماه"
-          changeType="up"
-          icon={<Users size={22} />}
-          color="#10b981"
-        />
-        <StatCard
-          title="لایسنس‌های فعال"
-          value={initialLicenses.filter((l) => l.status === "active").length}
-          unit={`از ${initialLicenses.length}`}
-          icon={<Key size={22} />}
-          color="#a855f7"
-        />
-        <StatCard
-          title="درآمد ماهانه"
-          value="۲.۴B"
-          unit="ریال"
-          icon={<DollarSign size={22} />}
-          color="#f59e0b"
-        />
-      </StatGrid>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {[
-          {
-            title: "مدیریت کارخانه‌ها",
-            icon: Building2,
-            color: "#3b82f6",
-            page: "tenants",
-            desc: "ایجاد و ویرایش کارخانه‌های مشتری",
-          },
-          {
-            title: "فعال‌سازی ماژول",
-            icon: Package,
-            color: "#8b5cf6",
-            page: "modules",
-            desc: "تنظیم ماژول‌های هر کارخانه",
-          },
-          {
-            title: "سلامت سیستم",
-            icon: Activity,
-            color: "#10b981",
-            page: "health",
-            desc: "مانیتورینگ سرورها",
-          },
-          {
-            title: "مارکت‌پلیس",
-            icon: Store,
-            color: "#ec4899",
-            page: "marketplace",
-            desc: "افزونه‌ها و پک‌ها",
-          },
-        ].map((item) => (
-          <button
-            key={item.page}
-            onClick={() => onNavigate(item.page)}
-            className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 text-center transition-all group"
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform"
-              style={{ backgroundColor: `${item.color}15` }}
-            >
-              <item.icon size={20} style={{ color: item.color }} />
-            </div>
-            <p className="text-white text-sm font-medium">{item.title}</p>
-            <p className="text-zinc-600 text-xs mt-1">{item.desc}</p>
-          </button>
-        ))}
-      </div>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-        <h3 className="text-white font-bold mb-3">لایسنس‌های منقضی نزدیک</h3>
-        <div className="space-y-2">
-          {initialLicenses
-            .filter((l) => l.status === "active")
-            .map((l) => {
-              const f = factories.find((f) => f.id === l.tenantId);
-              return (
-                <div
-                  key={l.id}
-                  className="flex items-center justify-between bg-zinc-800/40 rounded-xl p-3"
-                >
-                  <span className="text-white text-sm">
-                    {f?.name || l.tenantId}
-                  </span>
-                  <span className="text-zinc-400 text-xs font-mono">
-                    {l.licenseKey}
-                  </span>
-                  <span className="text-amber-400 text-xs">
-                    انقضا: {l.expiryDate}
-                  </span>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-    </div>
-  );
-}
+// function SuperAdminDashboard({
+//   onNavigate,
+// }: {
+//   onNavigate: (p: string) => void;
+// }) {
+//   const [factories, setFactories] = useState(initialFactories);
+//   const activeCount = factories.filter((f) => f.status === "active").length;
+//   return (
+//     <div className="space-y-6 animate-fade-in">
+//       <div className="flex items-center justify-between">
+//         <div>
+//           <h1 className="text-2xl font-bold text-white">
+//             پنل مدیریت ارشد FactoryOS
+//           </h1>
+//           <p className="text-zinc-500">
+//             مدیریت چند-کارخانه‌ای (Multi-Tenant) — لایسنس، ماژول‌ها، صفحات
+//             سفارشی
+//           </p>
+//         </div>
+//       </div>
+//       <StatGrid columns={4}>
+//         <StatCard
+//           title="کارخانه‌های فعال"
+//           value={activeCount}
+//           unit={`از ${factories.length}`}
+//           icon={<Building2 size={22} />}
+//           color="#3b82f6"
+//         />
+//         <StatCard
+//           title="مجموع کاربران"
+//           value="۱,۲۴۰"
+//           unit="نفر"
+//           change="+۸۹ این ماه"
+//           changeType="up"
+//           icon={<Users size={22} />}
+//           color="#10b981"
+//         />
+//         <StatCard
+//           title="لایسنس‌های فعال"
+//           value={initialLicenses.filter((l) => l.status === "active").length}
+//           unit={`از ${initialLicenses.length}`}
+//           icon={<Key size={22} />}
+//           color="#a855f7"
+//         />
+//         <StatCard
+//           title="درآمد ماهانه"
+//           value="۲.۴B"
+//           unit="ریال"
+//           icon={<DollarSign size={22} />}
+//           color="#f59e0b"
+//         />
+//       </StatGrid>
+//       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+//         {[
+//           {
+//             title: "مدیریت کارخانه‌ها",
+//             icon: Building2,
+//             color: "#3b82f6",
+//             page: "tenants",
+//             desc: "ایجاد و ویرایش کارخانه‌های مشتری",
+//           },
+//           {
+//             title: "فعال‌سازی ماژول",
+//             icon: Package,
+//             color: "#8b5cf6",
+//             page: "modules",
+//             desc: "تنظیم ماژول‌های هر کارخانه",
+//           },
+//           {
+//             title: "سلامت سیستم",
+//             icon: Activity,
+//             color: "#10b981",
+//             page: "health",
+//             desc: "مانیتورینگ سرورها",
+//           },
+//           {
+//             title: "مارکت‌پلیس",
+//             icon: Store,
+//             color: "#ec4899",
+//             page: "marketplace",
+//             desc: "افزونه‌ها و پک‌ها",
+//           },
+//         ].map((item) => (
+//           <button
+//             key={item.page}
+//             onClick={() => onNavigate(item.page)}
+//             className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 text-center transition-all group"
+//           >
+//             <div
+//               className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform"
+//               style={{ backgroundColor: `${item.color}15` }}
+//             >
+//               <item.icon size={20} style={{ color: item.color }} />
+//             </div>
+//             <p className="text-white text-sm font-medium">{item.title}</p>
+//             <p className="text-zinc-600 text-xs mt-1">{item.desc}</p>
+//           </button>
+//         ))}
+//       </div>
+//       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+//         <h3 className="text-white font-bold mb-3">لایسنس‌های منقضی نزدیک</h3>
+//         <div className="space-y-2">
+//           {initialLicenses
+//             .filter((l) => l.status === "active")
+//             .map((l) => {
+//               const f = factories.find((f) => f.id === l.tenantId);
+//               return (
+//                 <div
+//                   key={l.id}
+//                   className="flex items-center justify-between bg-zinc-800/40 rounded-xl p-3"
+//                 >
+//                   <span className="text-white text-sm">
+//                     {f?.name || l.tenantId}
+//                   </span>
+//                   <span className="text-zinc-400 text-xs font-mono">
+//                     {l.licenseKey}
+//                   </span>
+//                   <span className="text-amber-400 text-xs">
+//                     انقضا: {l.expiryDate}
+//                   </span>
+//                 </div>
+//               );
+//             })}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 function TenantsPage() {
-  const [licenses, setLicenses] = useState(initialLicenses);
+  // const [licenses, setLicenses] = useState(initialLicenses);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FactoryData | null>(null);
-  const [localFactories, setLocalFactories] = useState(initialFactories);
+  const [localFactories, setLocalFactories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedFactory, setExpandedFactory] = useState<string | null>(null);
+  const [choices, setChoices] = useState<any>(null);
+  const [loadingChoices, setLoadingChoices] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await factoryMetaService.getChoices();
+        setChoices(data);
+      } finally {
+        setLoadingChoices(false);
+      }
+    };
+
+    load();
+  }, []);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await factoryService.getFactories();
+        setLocalFactories(data ?? []);
+      } catch (err) {
+        console.error("Failed to load factories:", err);
+        setLocalFactories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  const mapFactory = (f: any) => ({
+    id: f.id,
+    code: f.code,
+    name: f.name,
+    ownerName: f.owner_name,
+    industry: f.industry,
+    ownerMobile: f.owner_mobile,
+    ownerEmail: f.owner_email,
+    address: f.address,
+    city: f.city,
+    plan: f.plan,
+    status: f.status,
+    expiresAt: f.expiration_date,
+    enabledModules: f.enabledModules ?? [],
+  });
+
+  const normalizedFactories = localFactories.map(mapFactory);
+
+  const safeChoices = choices ?? {
+    industry: [],
+    plan: [],
+    status: [],
+  };
+
+  const toEnglishDigits = (str: string) =>
+    str.replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d).toString());
+  const convertDate = (jalaliDate: string) => {
+    return moment
+      .from(toEnglishDigits(jalaliDate), "fa", "YYYY/MM/DD")
+      .format("YYYY-MM-DDTHH:mm:ss[Z]");
+  };
 
   const columns: Column<FactoryData>[] = [
     {
@@ -269,46 +334,32 @@ function TenantsPage() {
 
   const formFields: FormField[] = [
     { name: "name", label: "نام کارخانه", type: "text", required: true },
-    { name: "code", label: "کد", type: "text", required: true },
+    { name: "code", label: "شناسه ملی", type: "text", required: true },
     {
       name: "industry",
       label: "صنعت",
       type: "select",
       required: true,
-      options: [
-        { value: "فولاد و فلزات", label: "فولاد و فلزات" },
-        { value: "خودروسازی", label: "خودروسازی" },
-        { value: "پتروشیمی", label: "پتروشیمی" },
-        { value: "دارویی", label: "دارویی" },
-        { value: "غذایی", label: "غذایی" },
-      ],
+      options: loadingChoices ? [] : safeChoices.industry,
     },
     { name: "ownerName", label: "نام مالک", type: "text", required: true },
-        { name:'userLimit', label:'سقف کاربر', type:'number', required:true },
-    { name:'expiryDate', label:'تاریخ انقضا', type:'date', required:true },
-    { name: "ownerMobile", label: "موبایل مالک", type: "tel", required:true  },
-    { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
+    { name: "userLimit", label: "سقف کاربر", type: "text", required: true },
+    { name: "expiryDate", label: "تاریخ انقضا", type: "date", required: true },
+    { name: "ownerMobile", label: "موبایل مالک", type: "tel", required: true },
+    { name: "city", label: "شهر", type: "text", required: true },
     { name: "address", label: "آدرس", type: "textarea", colSpan: 2 },
-    { name: "city", label: "شهر", type: "text" },
+    { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
     {
       name: "planId",
       label: "پلن",
       type: "select",
-      options: [
-        { value: "PL-001", label: "Trial" },
-        { value: "PL-002", label: "Professional" },
-        { value: "PL-003", label: "Enterprise" },
-      ],
+      options: loadingChoices ? [] : safeChoices.plan,
     },
     {
       name: "status",
       label: "وضعیت",
       type: "select",
-      options: [
-        { value: "active", label: "فعال" },
-        { value: "trial", label: "آزمایشی" },
-        { value: "suspended", label: "تعلیق" },
-      ],
+      options: loadingChoices ? [] : safeChoices.status,
     },
   ];
 
@@ -322,7 +373,7 @@ function TenantsPage() {
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {[
           { label: "کل لایسنس‌ها", value: licenses.length, color: "#3b82f6" },
           {
@@ -349,7 +400,7 @@ function TenantsPage() {
             <p className="text-zinc-500 text-xs mt-1">{s.label}</p>
           </div>
         ))}
-      </div>
+      </div> */}
       <div>
         <h1 className="text-xl font-bold text-white">
           مدیریت کارخانه‌ها (Tenants)
@@ -357,7 +408,7 @@ function TenantsPage() {
         <p className="text-zinc-500 text-sm">ایجاد و مدیریت مشتریان صنعتی</p>
       </div>
       <DataTable
-        data={localFactories}
+        data={normalizedFactories}
         columns={columns}
         title="لیست کارخانه‌ها"
         icon={<Building2 size={18} className="text-blue-500" />}
@@ -374,22 +425,36 @@ function TenantsPage() {
       <FormModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onSubmit={(d: any) => {
-          if (editing) {
-            setLocalFactories((prev) =>
-              prev.map((f) => (f.id === editing.id ? { ...f, ...d } : f)),
-            );
-          } else {
-            setLocalFactories((prev) => [
-              ...prev,
-              {
-                id: uid("FAC-"),
-                enabledModules: ["command-center"],
-                ...d,
-              } as unknown as FactoryData,
-            ]);
+        onSubmit={async (d: any) => {
+          try {
+            const payload = {
+              code: d.code,
+              name: d.name,
+              owner_name: d.ownerName,
+              industry: "textile",
+              owner_mobile: d.ownerMobile,
+              owner_email: d.ownerEmail,
+              address: d.address,
+              city: d.city,
+              plan: d.planId,
+              status: d.status,
+              expiration_date: convertDate(d.expiryDate),
+              user_limit: Number(d.userLimit),
+            };
+            console.log(payload);
+            const factory = await factoryService.createFactory(payload);
+
+            setLocalFactories((prev) => [...prev, factory]);
+
+            setShowModal(false);
+          } catch (error) {
+            if (axios.isAxiosError(error)) {
+              console.log("STATUS:", error.response?.status);
+              console.log("DATA:", error.response?.data);
+            } else {
+              console.log("Unexpected error:", error);
+            }
           }
-          setShowModal(false);
         }}
         title={editing ? "ویرایش کارخانه" : "کارخانه جدید"}
         fields={formFields}
@@ -418,7 +483,7 @@ function TenantsPage() {
                 <div className="text-right">
                   <p className="text-white font-bold">{f.name}</p>
                   <p className="text-zinc-500 text-xs">
-                    {f.enabledModules.length} ماژول فعال
+                    {(f.enabledModules ?? []).length} ماژول فعال
                   </p>
                 </div>
               </div>
@@ -518,14 +583,14 @@ function PageBuilderSection({ factoryId }: { factoryId: string }) {
                   >
                     <Icon size={16} style={{ color }} />
                   </div>
-                  <div>
+                  {/* <div>
                     <p className="text-white font-medium text-sm">{p.title}</p>
                     <p className="text-zinc-500 text-[10px]">
                       {catLabels[p.category]} •{" "}
                       {initialFactories.find((f) => f.id === p.factoryId)
                         ?.name || p.factoryId}
                     </p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <p className="text-zinc-500 text-xs mb-3">
@@ -650,7 +715,7 @@ function PageBuilderModal({
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-purple-500/50"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm text-zinc-400 mb-1">
                 کارخانه
               </label>
@@ -665,7 +730,7 @@ function PageBuilderModal({
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm text-zinc-400 mb-1">دسته</label>
               <div className="flex gap-2">
@@ -787,106 +852,106 @@ function PageBuilderModal({
   );
 }
 
-function ModulesPage() {
-  const [factories, setFactories] = useState(initialFactories);
-  const [activeFactoryId, setActiveFactoryId] = useState(
-    factories[0]?.id || "",
-  );
-  const factory = factories.find((f) => f.id === activeFactoryId);
-  const allModules = modules.filter(
-    (m) => m.id !== "core" && m.id !== "superadmin",
-  );
+// function ModulesPage() {
+//   const [factories, setFactories] = useState(initialFactories);
+//   const [activeFactoryId, setActiveFactoryId] = useState(
+//     factories[0]?.id || "",
+//   );
+//   const factory = factories.find((f) => f.id === activeFactoryId);
+//   const allModules = modules.filter(
+//     (m) => m.id !== "core" && m.id !== "superadmin",
+//   );
 
-  const toggleModule = (moduleId: string) => {
-    setFactories((prev) =>
-      prev.map((f) =>
-        f.id === activeFactoryId
-          ? {
-              ...f,
-              enabledModules: f.enabledModules.includes(moduleId)
-                ? f.enabledModules.filter((m) => m !== moduleId)
-                : [...f.enabledModules, moduleId],
-            }
-          : f,
-      ),
-    );
-  };
+//   const toggleModule = (moduleId: string) => {
+//     setFactories((prev) =>
+//       prev.map((f) =>
+//         f.id === activeFactoryId
+//           ? {
+//               ...f,
+//               enabledModules: f.enabledModules.includes(moduleId)
+//                 ? f.enabledModules.filter((m) => m !== moduleId)
+//                 : [...f.enabledModules, moduleId],
+//             }
+//           : f,
+//       ),
+//     );
+//   };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-xl font-bold text-white">فعال‌سازی ماژول‌ها</h1>
-        <p className="text-zinc-500 text-sm">
-          انتخاب کنید هر کارخانه چه ماژول‌هایی فعال داشته باشد
-        </p>
-      </div>
-      <div className="flex gap-2 flex-wrap">
-        {factories.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setActiveFactoryId(f.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${activeFactoryId === f.id ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
-          >
-            {f.name}
-          </button>
-        ))}
-      </div>
-      {factory && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-500 font-black">
-              {factory.code.charAt(0)}
-            </div>
-            <div>
-              <h3 className="text-white font-bold">{factory.name}</h3>
-              <p className="text-zinc-500 text-xs">
-                {factory.enabledModules.length} از {allModules.length} ماژول
-                فعال
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {allModules.map((mod) => {
-              const isOn = factory.enabledModules.includes(mod.id);
-              return (
-                <div
-                  key={mod.id}
-                  className={`bg-zinc-800/50 border rounded-xl p-3 flex items-center justify-between ${isOn ? "border-green-500/30" : "border-zinc-700"}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <mod.icon
-                      size={16}
-                      style={{ color: isOn ? mod.color : "#52525b" }}
-                    />
-                    <span
-                      className={
-                        isOn ? "text-white text-sm" : "text-zinc-500 text-sm"
-                      }
-                    >
-                      {mod.title}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => toggleModule(mod.id)}
-                    className={`relative w-10 h-5 rounded-full transition-all ${isOn ? "bg-green-600" : "bg-zinc-600"}`}
-                  >
-                    <div
-                      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isOn ? "left-[22px]" : "left-[2px]"}`}
-                    />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-zinc-600 text-xs mt-4">
-            تغییرات به‌صورت لحظه‌ای اعمال می‌شوند و کاربران آن کارخانه در لاگین
-            بعدی ماژول‌های جدید را می‌بینند.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
+//   return (
+//     <div className="space-y-6 animate-fade-in">
+//       <div>
+//         <h1 className="text-xl font-bold text-white">فعال‌سازی ماژول‌ها</h1>
+//         <p className="text-zinc-500 text-sm">
+//           انتخاب کنید هر کارخانه چه ماژول‌هایی فعال داشته باشد
+//         </p>
+//       </div>
+//       <div className="flex gap-2 flex-wrap">
+//         {factories.map((f) => (
+//           <button
+//             key={f.id}
+//             onClick={() => setActiveFactoryId(f.id)}
+//             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${activeFactoryId === f.id ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+//           >
+//             {f.name}
+//           </button>
+//         ))}
+//       </div>
+//       {factory && (
+//         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+//           <div className="flex items-center gap-3 mb-4">
+//             <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-500 font-black">
+//               {factory.code.charAt(0)}
+//             </div>
+//             <div>
+//               <h3 className="text-white font-bold">{factory.name}</h3>
+//               <p className="text-zinc-500 text-xs">
+//                 {factory.enabledModules.length} از {allModules.length} ماژول
+//                 فعال
+//               </p>
+//             </div>
+//           </div>
+//           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+//             {allModules.map((mod) => {
+//               const isOn = factory.enabledModules.includes(mod.id);
+//               return (
+//                 <div
+//                   key={mod.id}
+//                   className={`bg-zinc-800/50 border rounded-xl p-3 flex items-center justify-between ${isOn ? "border-green-500/30" : "border-zinc-700"}`}
+//                 >
+//                   <div className="flex items-center gap-2">
+//                     <mod.icon
+//                       size={16}
+//                       style={{ color: isOn ? mod.color : "#52525b" }}
+//                     />
+//                     <span
+//                       className={
+//                         isOn ? "text-white text-sm" : "text-zinc-500 text-sm"
+//                       }
+//                     >
+//                       {mod.title}
+//                     </span>
+//                   </div>
+//                   <button
+//                     onClick={() => toggleModule(mod.id)}
+//                     className={`relative w-10 h-5 rounded-full transition-all ${isOn ? "bg-green-600" : "bg-zinc-600"}`}
+//                   >
+//                     <div
+//                       className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${isOn ? "left-[22px]" : "left-[2px]"}`}
+//                     />
+//                   </button>
+//                 </div>
+//               );
+//             })}
+//           </div>
+//           <p className="text-zinc-600 text-xs mt-4">
+//             تغییرات به‌صورت لحظه‌ای اعمال می‌شوند و کاربران آن کارخانه در لاگین
+//             بعدی ماژول‌های جدید را می‌بینند.
+//           </p>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 
 function HealthPage() {
   return (
