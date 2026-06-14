@@ -55,7 +55,7 @@ export default function OTPPage({
   rememberMe,
   onBack,
 }: OTPPageProps) {
-  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  const [otpCode, setOtpCode] = useState(["", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(120);
   const [isResending, setIsResending] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -78,7 +78,7 @@ export default function OTPPage({
     const otpValue = otpCode.join("");
 
     if (
-      otpValue.length === 6 &&
+      otpValue.length === 5 &&
       otpCode.every((digit) => digit !== "") &&
       !loading
     ) {
@@ -97,7 +97,7 @@ export default function OTPPage({
     newOtp[index] = newValue;
     setOtpCode(newOtp);
 
-    if (newValue && index < 5) {
+    if (newValue && index < 4) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -127,10 +127,10 @@ export default function OTPPage({
 
     const numbers = convertPersianToEnglish(pastedData)
       .replace(/[^0-9]/g, "")
-      .slice(0, 6);
+      .slice(0, 5);
 
     if (numbers.length > 0) {
-      const newOtp = ["", "", "", "", "", ""];
+      const newOtp = ["", "", "", "", ""];
 
       numbers.split("").forEach((num, index) => {
         newOtp[index] = convertEnglishToPersian(num);
@@ -147,7 +147,7 @@ export default function OTPPage({
     const otpValue = otpCode.join("");
     const englishOtp = convertPersianToEnglish(otpValue);
 
-    if (englishOtp.length !== 6) return;
+    if (englishOtp.length !== 5) return;
 
     const success = await login(
       nationalCode,
@@ -268,7 +268,7 @@ export default function OTPPage({
                   ))}
                 </div>
 
-                <p className="text-xs mt-3 text-center">کد تایید ۶ رقمی است</p>
+                <p className="text-xs mt-3 text-center">کد تایید ۵ رقمی است</p>
               </div>
 
               <div className="text-center">

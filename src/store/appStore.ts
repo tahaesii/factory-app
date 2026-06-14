@@ -50,7 +50,7 @@ const getFirstPageForModule = (moduleId: string): string => {
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  sidebarOpen: true,
+  sidebarOpen: false,
   sidebarCollapsed: false,
   currentModule: 'command-center',
   currentPage: getFirstPageForModule('command-center'),

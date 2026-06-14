@@ -6,7 +6,6 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
-  Command,
   LayoutDashboard,
 } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
@@ -31,6 +30,7 @@ export default function Sidebar() {
   } = useAppStore();
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const canViewModule = useAuthStore((s) => s.canViewModule);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
     moduleCategories.map((c) => c.id),
@@ -45,8 +45,9 @@ export default function Sidebar() {
     );
   };
 
-  // === COLLAPSED ===
-  if (sidebarCollapsed) {
+  const isMobile = window.innerWidth < 1024;
+
+  if (sidebarCollapsed && !isMobile) {
     return (
       <div
         className="w-[60px] flex flex-col h-screen sticky top-0 transition-all"
@@ -57,7 +58,13 @@ export default function Sidebar() {
           style={{ borderBottom: `1px solid ${BORDER}` }}
         >
           <button
-            onClick={toggleSidebarCollapse}
+            onClick={() => {
+              if (window.innerWidth < 1024) {
+                toggleSidebar();
+              } else {
+                toggleSidebarCollapse();
+              }
+            }}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
             style={{ color: MUTED }}
             onMouseEnter={(e) => {
@@ -82,6 +89,9 @@ export default function Sidebar() {
                 onClick={() => {
                   setCurrentModule(mod.id);
                   setCurrentPage(mod.pages[0]?.id || "dashboard");
+                  if (window.innerWidth < 1024) {
+                    toggleSidebar();
+                  }
                 }}
                 title={mod.title}
                 className="w-full p-2 rounded-xl flex items-center justify-center transition-all"
@@ -109,8 +119,14 @@ export default function Sidebar() {
           })}
         </div>
         <div className="p-2" style={{ borderTop: `1px solid ${BORDER}` }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: PRIMARY }}>
-            <Settings className="w-5 h-5 animate-spin-slow" style={{ color: '#020817' }} />
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: PRIMARY }}
+          >
+            <Settings
+              className="w-5 h-5 animate-spin-slow"
+              style={{ color: "#020817" }}
+            />
           </div>
         </div>
       </div>
@@ -142,7 +158,13 @@ export default function Sidebar() {
           </span>
         </div>
         <button
-          onClick={toggleSidebarCollapse}
+          onClick={() => {
+            if (window.innerWidth < 1024) {
+              toggleSidebar();
+            } else {
+              toggleSidebarCollapse();
+            }
+          }}
           className="transition-colors"
           style={{ color: MUTED }}
           onMouseEnter={(e) => (e.currentTarget.style.color = TEXT)}
@@ -180,34 +202,10 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="px-3 py-2">
-        <button
-          className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] transition-all"
-          style={{
-            background: `${BORDER}40`,
-            color: MUTED,
-            border: `1px solid ${BORDER}`,
-          }}
-          onClick={() => {
-            const e = new KeyboardEvent("keydown", { key: "k", ctrlKey: true });
-            window.dispatchEvent(e);
-          }}
-        >
-          <Command size={12} />
-          <span className="flex-1 text-right">جستجوی سریع...</span>
-          <kbd
-            className="text-[10px] px-1.5 py-0.5 rounded"
-            style={{ background: BORDER }}
-          >
-            ⌘K
-          </kbd>
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto py-1 px-2">
         {/* Custom Pages for this factory */}
         {user &&
-          user.role !== "superadmin" &&
+          user.role !== "super_admin" &&
           (() => {
             const factoryPages = customPages.filter(
               (p) => p.factoryId === user.factoryId,

@@ -1,7 +1,8 @@
 import { authService } from "@/services/authService";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 export type UserRole =
-  | "superadmin"
+  | "super_admin"
   | "admin"
   | "operator"
   | "supervisor"
@@ -10,15 +11,13 @@ export type UserRole =
   | "viewer";
 
 export interface User {
-  id: string;
-  nationalCode: string;
-  name: string;
-  username: string;
-  email: string;
-  role: UserRole;
-  phoneNumber: string;
-  departmentId?: string;
-  factoryId?: string;
+  id: number;
+  national_code: string;
+  phone_number: string;
+  role: string;
+  factory: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 interface AuthState {
@@ -32,17 +31,17 @@ interface AuthState {
     phoneNumber: string,
   ) => Promise<SendOtpResult>;
   login: (
-  nationalCode: string,
-  phoneNumber: string,
-  code: string,
-  rememberMe: boolean,
-) => Promise<boolean>;
+    nationalCode: string,
+    phoneNumber: string,
+    code: string,
+    rememberMe: boolean,
+  ) => Promise<boolean>;
   logout: () => void;
   canViewModule: (moduleId: string) => boolean;
 }
 
 const ROLE_MODULES: Record<string, string[]> = {
-  superadmin: [
+  super_admin: [
     "core",
     "superadmin",
     "org",
@@ -118,89 +117,96 @@ interface SendOtpResult {
   error: string | null;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  loading: false,
-  error: null,
-  sendOtp: async (nationalCode: string, phoneNumber: string) => {
-    set({ loading: true, error: null });
-
-    try {
-      await authService.sendOtp(nationalCode, phoneNumber);
-
-      set({ loading: false });
-
-      return {
-        success: true,
-        error: null,
-      };
-    } catch (error: any) {
-      console.log(error.response);
-      const message = error.response?.data?.message || "خطا در ارسال کد";
-
-      set({
-        loading: false,
-        error: message,
-      });
-
-      return {
-        success: false,
-        error: message,
-      };
-    }
-  },
-  login: async (
-  nationalCode: string,
-  phoneNumber: string,
-  code: string,
-  rememberMe: boolean
-) => {
-  set({ loading: true, error: null });
-
-  try {
-    const data = await authService.verifyOtp(
-      nationalCode,
-      phoneNumber,
-      code,
-      rememberMe
-    );
-
-    set({
-      user: data.user,
-      token: data.access_token,
-      isAuthenticated: true,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
       loading: false,
       error: null,
-    });
+      sendOtp: async (nationalCode: string, phoneNumber: string) => {
+        set({ loading: true, error: null });
 
-    if (rememberMe) {
-      localStorage.setItem(
-        "token",
-        data.access_token
-      );
-    }
+        try {
+          await authService.sendOtp(nationalCode, phoneNumber);
 
-    return true;
-  } catch (error: any) {
-    const message =
-      error.response?.data?.message ||
-      "خطا در ورود";
+          set({ loading: false });
 
-    set({
-      loading: false,
-      error: message,
-    });
+          return {
+            success: true,
+            error: null,
+          };
+        } catch (error: any) {
+          console.log(error.response);
+          const message = error.response?.data?.message || "خطا در ارسال کد";
 
-    return false;
-  }
-},
-  logout: () =>
-    set({ user: null, token: null, isAuthenticated: false, error: null }),
-  canViewModule: (moduleId: string) => {
-    const user = get().user;
-    if (!user) return false;
-    return ROLE_MODULES[user.role]?.includes(moduleId) ?? false;
-  },
-}));
+          set({
+            loading: false,
+            error: message,
+          });
+
+          return {
+            success: false,
+            error: message,
+          };
+        }
+      },
+      login: async (nationalCode, phoneNumber, code, rememberMe) => {
+        set({ loading: true, error: null });
+
+        try {
+          const data = await authService.verifyOtp(
+            nationalCode,
+            phoneNumber,
+            code,
+            rememberMe,
+          );
+
+          set({
+            user: data.user,
+            token: data.access,
+            isAuthenticated: true,
+            loading: false,
+            error: null,
+          });
+
+          return true;
+        } catch (error: any) {
+          const message = error.response?.data?.message || "خطا در ورود";
+
+          set({
+            loading: false,
+            error: message,
+          });
+
+          return false;
+        }
+      },
+      logout: () => {
+        localStorage.removeItem("auth-storage");
+
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          error: null,
+        });
+      },
+      canViewModule: (moduleId: string) => {
+        const user = get().user;
+        if (!user) return false;
+        return ROLE_MODULES[user.role]?.includes(moduleId) ?? false;
+      },
+    }),
+    {
+      name: "auth-storage",
+
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);

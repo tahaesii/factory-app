@@ -3,7 +3,7 @@ import {
   Wrench, Shield, TriangleAlert, Users,
   FileText, Building2, GitBranch, BarChart3,
   Brain, Store, Blocks, Bot,
-  Settings, Activity, Cpu, Gauge, ClipboardList, Key, Globe, Link
+  Settings, Activity, Cpu, Gauge, ClipboardList, Key, Link
 } from 'lucide-react';
 
 export interface ModuleDef {
