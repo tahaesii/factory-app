@@ -1,5 +1,5 @@
 import { X, Save, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DatePicker from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
@@ -65,6 +65,16 @@ export default function FormModal({
     });
     return initial;
   });
+  useEffect(() => {
+    const initial: Record<string, any> = {};
+
+    fields.forEach((f) => {
+      initial[f.name] = initialData[f.name] ?? f.defaultValue ?? "";
+    });
+
+    setFormData(initial);
+  }, [initialData, fields, isOpen]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (!isOpen) return null;
@@ -296,18 +306,20 @@ export default function FormModal({
           >
             {cancelLabel}
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
-          >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            {submitLabel}
-          </button>
+          {!fields.every((f) => f.disabled) && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
+            >
+              {loading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              {submitLabel}
+            </button>
+          )}
         </div>
       </div>
     </div>

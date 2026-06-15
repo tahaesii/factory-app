@@ -11,7 +11,7 @@ export const factoryService = {
     return response.data;
   },
 
-  updateFactory: async (id: string, data: any) => {
+  updateFactory: async (id: number, data: any) => {
     const response = await api.put(`/api/factories/${id}/`, data);
     return response.data;
   },

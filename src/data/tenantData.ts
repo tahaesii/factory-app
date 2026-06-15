@@ -1,21 +1,25 @@
 import type { CustomPage } from "@/types/tenant";
 
-export interface FactoryData {
+export type FactoryData = {
   id: number;
   code: string;
+  license_id: string;
   name: string;
-  ownerName: string;
+  owner_name: string;
   industry: string;
-  ownerMobile: string;
-  ownerEmail: string;
+  owner_mobile: string;
+  owner_email: string;
   address: string;
   city: string;
-  plan: string;
-  status: string;
-  expiresAt: string;
-  enabledModules: string[];
-}
-
+  plan: "trial" | "professional" | "enterprise";
+  status: "active" | "trial" | "suspended" | "expired";
+  expiration_date: string;
+  user_limit: number;
+  current_user_count: number;
+  is_license_valid: boolean;
+  created_at: string;
+  updated_at: string;
+};
 export const customPages: CustomPage[] = [
   {
     id: "CP-001",

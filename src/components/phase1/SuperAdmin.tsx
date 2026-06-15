@@ -20,10 +20,7 @@ import { useAppStore } from "@/store/appStore";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import FormModal, { FormField } from "@/components/ui/FormModal";
 import StatCard, { StatGrid } from "@/components/ui/StatCard";
-import {
-  customPages as initialPages,
-  FactoryData,
-} from "@/data/tenantData";
+import { customPages as initialPages, FactoryData } from "@/data/tenantData";
 import { modules } from "@/data/modules";
 import type {
   CustomPage,
@@ -64,144 +61,159 @@ export function SuperAdminModule() {
     //   return <HealthPage />;
     // case "marketplace":
     //   return <MarketplacePage />;
-    // default:
-    //   return <SuperAdminDashboard onNavigate={setCurrentPage} />;
+    default:
+      return <SuperAdminDashboard onNavigate={setCurrentPage} />;
   }
 }
 
-// function SuperAdminDashboard({
-//   onNavigate,
-// }: {
-//   onNavigate: (p: string) => void;
-// }) {
-//   const [factories, setFactories] = useState(initialFactories);
-//   const activeCount = factories.filter((f) => f.status === "active").length;
-//   return (
-//     <div className="space-y-6 animate-fade-in">
-//       <div className="flex items-center justify-between">
-//         <div>
-//           <h1 className="text-2xl font-bold text-white">
-//             پنل مدیریت ارشد FactoryOS
-//           </h1>
-//           <p className="text-zinc-500">
-//             مدیریت چند-کارخانه‌ای (Multi-Tenant) — لایسنس، ماژول‌ها، صفحات
-//             سفارشی
-//           </p>
-//         </div>
-//       </div>
-//       <StatGrid columns={4}>
-//         <StatCard
-//           title="کارخانه‌های فعال"
-//           value={activeCount}
-//           unit={`از ${factories.length}`}
-//           icon={<Building2 size={22} />}
-//           color="#3b82f6"
-//         />
-//         <StatCard
-//           title="مجموع کاربران"
-//           value="۱,۲۴۰"
-//           unit="نفر"
-//           change="+۸۹ این ماه"
-//           changeType="up"
-//           icon={<Users size={22} />}
-//           color="#10b981"
-//         />
-//         <StatCard
-//           title="لایسنس‌های فعال"
-//           value={initialLicenses.filter((l) => l.status === "active").length}
-//           unit={`از ${initialLicenses.length}`}
-//           icon={<Key size={22} />}
-//           color="#a855f7"
-//         />
-//         <StatCard
-//           title="درآمد ماهانه"
-//           value="۲.۴B"
-//           unit="ریال"
-//           icon={<DollarSign size={22} />}
-//           color="#f59e0b"
-//         />
-//       </StatGrid>
-//       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-//         {[
-//           {
-//             title: "مدیریت کارخانه‌ها",
-//             icon: Building2,
-//             color: "#3b82f6",
-//             page: "tenants",
-//             desc: "ایجاد و ویرایش کارخانه‌های مشتری",
-//           },
-//           {
-//             title: "فعال‌سازی ماژول",
-//             icon: Package,
-//             color: "#8b5cf6",
-//             page: "modules",
-//             desc: "تنظیم ماژول‌های هر کارخانه",
-//           },
-//           {
-//             title: "سلامت سیستم",
-//             icon: Activity,
-//             color: "#10b981",
-//             page: "health",
-//             desc: "مانیتورینگ سرورها",
-//           },
-//           {
-//             title: "مارکت‌پلیس",
-//             icon: Store,
-//             color: "#ec4899",
-//             page: "marketplace",
-//             desc: "افزونه‌ها و پک‌ها",
-//           },
-//         ].map((item) => (
-//           <button
-//             key={item.page}
-//             onClick={() => onNavigate(item.page)}
-//             className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 text-center transition-all group"
-//           >
-//             <div
-//               className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform"
-//               style={{ backgroundColor: `${item.color}15` }}
-//             >
-//               <item.icon size={20} style={{ color: item.color }} />
-//             </div>
-//             <p className="text-white text-sm font-medium">{item.title}</p>
-//             <p className="text-zinc-600 text-xs mt-1">{item.desc}</p>
-//           </button>
-//         ))}
-//       </div>
-//       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-//         <h3 className="text-white font-bold mb-3">لایسنس‌های منقضی نزدیک</h3>
-//         <div className="space-y-2">
-//           {initialLicenses
-//             .filter((l) => l.status === "active")
-//             .map((l) => {
-//               const f = factories.find((f) => f.id === l.tenantId);
-//               return (
-//                 <div
-//                   key={l.id}
-//                   className="flex items-center justify-between bg-zinc-800/40 rounded-xl p-3"
-//                 >
-//                   <span className="text-white text-sm">
-//                     {f?.name || l.tenantId}
-//                   </span>
-//                   <span className="text-zinc-400 text-xs font-mono">
-//                     {l.licenseKey}
-//                   </span>
-//                   <span className="text-amber-400 text-xs">
-//                     انقضا: {l.expiryDate}
-//                   </span>
-//                 </div>
-//               );
-//             })}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+function SuperAdminDashboard({
+  onNavigate,
+}: {
+  onNavigate: (p: string) => void;
+}) {
+  const [factories, setFactories] = useState<FactoryData[]>([]);
+
+  useEffect(() => {
+    const loadFactories = async () => {
+      try {
+        const data = await factoryService.getFactories();
+        setFactories(data ?? []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadFactories();
+  }, []);
+  const activeCount = factories.filter((f) => f.status === "active").length;
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            پنل مدیریت ارشد FactoryOS
+          </h1>
+          <p className="text-zinc-500">
+            مدیریت چند-کارخانه‌ای (Multi-Tenant) — لایسنس، ماژول‌ها، صفحات
+            سفارشی
+          </p>
+        </div>
+      </div>
+      <StatGrid columns={4}>
+        <StatCard
+          title="کارخانه‌های فعال"
+          value={activeCount}
+          unit={`از ${factories.length}`}
+          icon={<Building2 size={22} />}
+          color="#3b82f6"
+        />
+        <StatCard
+          title="مجموع کاربران"
+          value="۱,۲۴۰"
+          unit="نفر"
+          change="+۸۹ این ماه"
+          changeType="up"
+          icon={<Users size={22} />}
+          color="#10b981"
+        />
+        <StatCard
+          title="لایسنس‌های فعال"
+          value={factories.filter((f) => f.is_license_valid).length}
+          unit={`از ${factories.length}`}
+          icon={<Key size={22} />}
+          color="#a855f7"
+        />
+        <StatCard
+          title="درآمد ماهانه"
+          value="۲.۴B"
+          unit="ریال"
+          icon={<DollarSign size={22} />}
+          color="#f59e0b"
+        />
+      </StatGrid>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          {
+            title: "مدیریت کارخانه‌ها",
+            icon: Building2,
+            color: "#3b82f6",
+            page: "tenants",
+            desc: "ایجاد و ویرایش کارخانه‌های مشتری",
+          },
+          {
+            title: "فعال‌سازی ماژول",
+            icon: Package,
+            color: "#8b5cf6",
+            page: "modules",
+            desc: "تنظیم ماژول‌های هر کارخانه",
+          },
+          {
+            title: "سلامت سیستم",
+            icon: Activity,
+            color: "#10b981",
+            page: "health",
+            desc: "مانیتورینگ سرورها",
+          },
+          {
+            title: "مارکت‌پلیس",
+            icon: Store,
+            color: "#ec4899",
+            page: "marketplace",
+            desc: "افزونه‌ها و پک‌ها",
+          },
+        ].map((item) => (
+          <button
+            key={item.page}
+            onClick={() => onNavigate(item.page)}
+            className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 text-center transition-all group"
+          >
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform"
+              style={{ backgroundColor: `${item.color}15` }}
+            >
+              <item.icon size={20} style={{ color: item.color }} />
+            </div>
+            <p className="text-white text-sm font-medium">{item.title}</p>
+            <p className="text-zinc-600 text-xs mt-1">{item.desc}</p>
+          </button>
+        ))}
+      </div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <h3 className="text-white font-bold mb-3">لایسنس‌های منقضی نزدیک</h3>
+        <div className="space-y-2">
+          {factories
+            .filter(
+              (f) =>
+                new Date(f.expiration_date).getTime() - Date.now() <
+                7 * 24 * 60 * 60 * 1000,
+            )
+            .map((f) => (
+              <div
+                key={f.id}
+                className="flex items-center justify-between bg-zinc-800/40 rounded-xl p-3"
+              >
+                <span className="text-white text-sm">{f.name}</span>
+
+                <span className="text-zinc-400 text-xs font-mono">
+                  {f.license_id}
+                </span>
+
+                <span className="text-amber-400 text-xs">
+                  انقضا: {moment(f.expiration_date).format("YYYY/MM/DD")}
+                </span>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TenantsPage() {
   // const [licenses, setLicenses] = useState(initialLicenses);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FactoryData | null>(null);
+  const [viewing, setViewing] = useState<FactoryRow | null>(null);
   const [localFactories, setLocalFactories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFactory, setExpandedFactory] = useState<string | null>(null);
@@ -226,6 +238,7 @@ function TenantsPage() {
         setLoading(true);
         const data = await factoryService.getFactories();
         setLocalFactories(data ?? []);
+        console.log(localFactories);
       } catch (err) {
         console.error("Failed to load factories:", err);
         setLocalFactories([]);
@@ -237,23 +250,59 @@ function TenantsPage() {
     load();
   }, []);
 
-  const mapFactory = (f: any) => ({
-    id: f.id,
+  type FactoryData = {
+    id: number;
+    code: string;
+    name: string;
+    owner_name: string;
+    owner_mobile: string;
+    owner_email: string;
+    address: string;
+    industry: string;
+    city: string;
+    plan: string;
+    status: string;
+    user_limit: number;
+    expiration_date: string;
+    enabledModules?: string[];
+  };
+
+  type FactoryRow = {
+    id: string;
+    code: string;
+    name: string;
+    ownerName: string;
+    ownerMobile: string;
+    ownerEmail: string;
+    address: string;
+    industry: string;
+    city: string;
+    plan: string;
+    status: string;
+    userLimit: number;
+    expiresAt: string;
+    enabledModules: string[];
+  };
+
+  const mapFactory = (f: FactoryData): FactoryRow => ({
+    id: String(f.id),
     code: f.code,
     name: f.name,
     ownerName: f.owner_name,
-    industry: f.industry,
     ownerMobile: f.owner_mobile,
     ownerEmail: f.owner_email,
     address: f.address,
+    industry: f.industry,
     city: f.city,
     plan: f.plan,
     status: f.status,
-    expiresAt: f.expiration_date,
+    userLimit: f.user_limit,
+    expiresAt: moment(f.expiration_date).locale("fa").format("YYYY/MM/DD"),
     enabledModules: f.enabledModules ?? [],
   });
 
   const normalizedFactories = localFactories.map(mapFactory);
+  console.log("normalizedFactories:", normalizedFactories);
 
   const safeChoices = choices ?? {
     industry: [],
@@ -261,15 +310,18 @@ function TenantsPage() {
     status: [],
   };
 
-  const toEnglishDigits = (str: string) =>
-    str.replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d).toString());
-  const convertDate = (jalaliDate: string) => {
+  const toEnglishDigits = (str?: string) =>
+    (str || "").replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d).toString());
+
+  const convertDate = (jalaliDate?: string) => {
+    if (!jalaliDate) return null;
+
     return moment
       .from(toEnglishDigits(jalaliDate), "fa", "YYYY/MM/DD")
       .format("YYYY-MM-DDTHH:mm:ss[Z]");
   };
 
-  const columns: Column<FactoryData>[] = [
+  const columns: Column<FactoryRow>[] = [
     {
       key: "code",
       title: "کد",
@@ -288,19 +340,36 @@ function TenantsPage() {
     { key: "ownerName", title: "مالک" },
     { key: "city", title: "شهر" },
     {
-      key: "planId",
+      key: "plan",
       title: "پلن",
       render: (v) => {
         const plans: Record<string, { name: string; color: string }> = {
-          "PL-001": { name: "Trial", color: "#6b7280" },
-          "PL-002": { name: "Professional", color: "#3b82f6" },
-          "PL-003": { name: "Enterprise", color: "#f59e0b" },
+          trial: {
+            name: "Trial",
+            color: "#6b7280",
+          },
+          professional: {
+            name: "Professional",
+            color: "#3b82f6",
+          },
+          enterprise: {
+            name: "Enterprise",
+            color: "#f59e0b",
+          },
         };
-        const p = plans[v] || { name: v, color: "#6b7280" };
+
+        const p = plans[v] || {
+          name: v ?? "-",
+          color: "#6b7280",
+        };
+
         return (
           <span
             className="text-xs px-2 py-0.5 rounded"
-            style={{ backgroundColor: `${p.color}20`, color: p.color }}
+            style={{
+              backgroundColor: `${p.color}20`,
+              color: p.color,
+            }}
           >
             {p.name}
           </span>
@@ -344,13 +413,13 @@ function TenantsPage() {
     },
     { name: "ownerName", label: "نام مالک", type: "text", required: true },
     { name: "userLimit", label: "سقف کاربر", type: "text", required: true },
-    { name: "expiryDate", label: "تاریخ انقضا", type: "date", required: true },
+    { name: "expiresAt", label: "تاریخ انقضا", type: "date", required: true },
     { name: "ownerMobile", label: "موبایل مالک", type: "tel", required: true },
     { name: "city", label: "شهر", type: "text", required: true },
     { name: "address", label: "آدرس", type: "textarea", colSpan: 2 },
     { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
     {
-      name: "planId",
+      name: "plan",
       label: "پلن",
       type: "select",
       options: loadingChoices ? [] : safeChoices.plan,
@@ -407,7 +476,7 @@ function TenantsPage() {
         </h1>
         <p className="text-zinc-500 text-sm">ایجاد و مدیریت مشتریان صنعتی</p>
       </div>
-      <DataTable
+      <DataTable<FactoryRow>
         data={normalizedFactories}
         columns={columns}
         title="لیست کارخانه‌ها"
@@ -420,32 +489,45 @@ function TenantsPage() {
           setEditing(t);
           setShowModal(true);
         }}
+        onView={(t) => {
+          setEditing(null);
+          setViewing(t);
+          setShowModal(true);
+        }}
         addLabel="کارخانه جدید"
       />
       <FormModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          setEditing(null);
+          setViewing(null);
+        }}
         onSubmit={async (d: any) => {
+          if (viewing) return;
           try {
             const payload = {
               code: d.code,
               name: d.name,
               owner_name: d.ownerName,
-              industry: "textile",
+              industry: d.industry,
               owner_mobile: d.ownerMobile,
               owner_email: d.ownerEmail,
               address: d.address,
               city: d.city,
-              plan: d.planId,
+              plan: d.plan,
               status: d.status,
-              expiration_date: convertDate(d.expiryDate),
+              expiration_date: convertDate(d.expiresAt),
               user_limit: Number(d.userLimit),
             };
-            console.log(payload);
-            const factory = await factoryService.createFactory(payload);
+            if (editing) {
+              await factoryService.updateFactory(editing.id, payload);
+            } else {
+              await factoryService.createFactory(payload);
+            }
 
-            setLocalFactories((prev) => [...prev, factory]);
-
+            const data = await factoryService.getFactories();
+            setLocalFactories(data ?? []);
             setShowModal(false);
           } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -456,9 +538,18 @@ function TenantsPage() {
             }
           }
         }}
-        title={editing ? "ویرایش کارخانه" : "کارخانه جدید"}
-        fields={formFields}
-        initialData={editing || {}}
+        title={
+          viewing
+            ? "مشاهده کارخانه"
+            : editing
+              ? "ویرایش کارخانه"
+              : "کارخانه جدید"
+        }
+        fields={formFields.map((f) => ({
+          ...f,
+          disabled: !!viewing,
+        }))}
+        initialData={viewing || editing || {}}
         size="lg"
       />
       <div className="space-y-3">
