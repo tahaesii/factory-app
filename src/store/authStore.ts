@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 export type UserRole =
   | "super_admin"
-  | "admin"
+  | "factory_admin"
   | "operator"
   | "supervisor"
   | "maintenance"
@@ -68,7 +68,7 @@ const ROLE_MODULES: Record<string, string[]> = {
     "nocode",
     "settings",
   ],
-  admin: [
+  factory_admin: [
     "core",
     "org",
     "workflow",

@@ -17,7 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
-import DataTable, { Column } from "@/components/ui/DataTable";
+import DataTable from "@/components/ui/DataTable";
 import FormModal, { FormField } from "@/components/ui/FormModal";
 import StatCard, { StatGrid } from "@/components/ui/StatCard";
 import { customPages as initialPages, FactoryData } from "@/data/tenantData";
@@ -210,12 +210,10 @@ function SuperAdminDashboard({
 }
 
 function TenantsPage() {
-  // const [licenses, setLicenses] = useState(initialLicenses);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FactoryData | null>(null);
   const [viewing, setViewing] = useState<FactoryRow | null>(null);
   const [localFactories, setLocalFactories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [expandedFactory, setExpandedFactory] = useState<string | null>(null);
   const [choices, setChoices] = useState<any>(null);
   const [loadingChoices, setLoadingChoices] = useState(true);
@@ -235,21 +233,25 @@ function TenantsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        setLoading(true);
         const data = await factoryService.getFactories();
         setLocalFactories(data ?? []);
         console.log(localFactories);
       } catch (err) {
         console.error("Failed to load factories:", err);
         setLocalFactories([]);
-      } finally {
-        setLoading(false);
       }
     };
 
     load();
   }, []);
-
+  interface Column<T> {
+    key: keyof T;
+    title: string;
+    width?: number;
+    sortable?: boolean;
+    filterable?: boolean;
+    render?: (value: any, row: T, index: number) => React.ReactNode;
+  }
   type FactoryData = {
     id: number;
     code: string;
@@ -265,6 +267,8 @@ function TenantsPage() {
     user_limit: number;
     expiration_date: string;
     enabledModules?: string[];
+    is_license_valid: boolean;
+    owner_national_code: string;
   };
 
   type FactoryRow = {
@@ -274,6 +278,7 @@ function TenantsPage() {
     ownerName: string;
     ownerMobile: string;
     ownerEmail: string;
+    ownerCode: string;
     address: string;
     industry: string;
     city: string;
@@ -282,6 +287,7 @@ function TenantsPage() {
     userLimit: number;
     expiresAt: string;
     enabledModules: string[];
+    isLicenseValid: boolean; // UI ONLY
   };
 
   const mapFactory = (f: FactoryData): FactoryRow => ({
@@ -291,6 +297,7 @@ function TenantsPage() {
     ownerName: f.owner_name,
     ownerMobile: f.owner_mobile,
     ownerEmail: f.owner_email,
+    ownerCode: f.owner_national_code,
     address: f.address,
     industry: f.industry,
     city: f.city,
@@ -299,6 +306,7 @@ function TenantsPage() {
     userLimit: f.user_limit,
     expiresAt: moment(f.expiration_date).locale("fa").format("YYYY/MM/DD"),
     enabledModules: f.enabledModules ?? [],
+    isLicenseValid: f.is_license_valid,
   });
 
   const normalizedFactories = localFactories.map(mapFactory);
@@ -412,26 +420,43 @@ function TenantsPage() {
       options: loadingChoices ? [] : safeChoices.industry,
     },
     { name: "ownerName", label: "نام مالک", type: "text", required: true },
+    {
+      name: "ownerCode",
+      label: "کدملی مالک",
+      type: "text",
+      required: true,
+      minLength: 10,
+      maxLength: 10,
+    },
+    {
+      name: "ownerMobile",
+      label: "موبایل مالک",
+      type: "tel",
+      required: true,
+      minLength: 11,
+      maxLength: 11,
+    },
     { name: "userLimit", label: "سقف کاربر", type: "text", required: true },
-    { name: "expiresAt", label: "تاریخ انقضا", type: "date", required: true },
-    { name: "ownerMobile", label: "موبایل مالک", type: "tel", required: true },
     { name: "city", label: "شهر", type: "text", required: true },
-    { name: "address", label: "آدرس", type: "textarea", colSpan: 2 },
-    { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
+    { name: "expiresAt", label: "تاریخ انقضا", type: "date", required: true },
     {
       name: "plan",
       label: "پلن",
       type: "select",
       options: loadingChoices ? [] : safeChoices.plan,
+      required: true,
     },
     {
       name: "status",
       label: "وضعیت",
       type: "select",
       options: loadingChoices ? [] : safeChoices.status,
+      required: true,
     },
+    { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
+    { name: "address", label: "آدرس", type: "textarea", colSpan: 2 },
   ];
-
+  const factoriesList = normalizedFactories;
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -442,22 +467,27 @@ function TenantsPage() {
           </p>
         </div>
       </div>
-      {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {[
-          { label: "کل لایسنس‌ها", value: licenses.length, color: "#3b82f6" },
+          {
+            label: "کل کارخانه‌ها",
+            value: factoriesList.length,
+            color: "#3b82f6",
+          },
           {
             label: "فعال",
-            value: licenses.filter((l) => l.status === "active").length,
+            value: factoriesList.filter((f) => f.status === "active").length,
             color: "#10b981",
           },
           {
             label: "منقضی",
-            value: licenses.filter((l) => l.status === "expired").length,
+            value: factoriesList.filter((f) => f.status === "suspended").length,
             color: "#ef4444",
           },
           {
-            label: "کارخانه تحت پوشش",
-            value: new Set(licenses.map((l) => l.tenantId)).size,
+            label: "لایسنس معتبر",
+            value: factoriesList.filter((f) => f.isLicenseValid).length,
             color: "#f59e0b",
           },
         ].map((s) => (
@@ -469,7 +499,7 @@ function TenantsPage() {
             <p className="text-zinc-500 text-xs mt-1">{s.label}</p>
           </div>
         ))}
-      </div> */}
+      </div>
       <div>
         <h1 className="text-xl font-bold text-white">
           مدیریت کارخانه‌ها (Tenants)
@@ -519,6 +549,7 @@ function TenantsPage() {
               status: d.status,
               expiration_date: convertDate(d.expiresAt),
               user_limit: Number(d.userLimit),
+              owner_national_code: d.ownerCode,
             };
             if (editing) {
               await factoryService.updateFactory(editing.id, payload);
@@ -607,7 +638,7 @@ function TenantsPage() {
                               className="sr-only peer"
                             />
                             <div
-                              className={`w-8 h-4 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all ${enabled ? "bg-green-600" : "bg-zinc-600"}`}
+                              className={`w-8 h-4 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-px after:start-px after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all ${enabled ? "bg-green-600" : "bg-zinc-600"}`}
                             />
                           </label>
                         </div>

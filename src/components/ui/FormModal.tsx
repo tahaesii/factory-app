@@ -28,6 +28,8 @@ export interface FormField {
   disabled?: boolean;
   min?: number;
   max?: number;
+  minLength?: number;
+  maxLength?: number;
   rows?: number;
   colSpan?: 1 | 2;
   validation?: (value: any) => string | null;
@@ -239,6 +241,8 @@ export default function FormModal({
             placeholder={field.placeholder}
             min={field.min}
             max={field.max}
+            minLength={field.minLength}
+            maxLength={field.maxLength}
             className={baseInputClass}
             dir={
               field.type === "email" || field.type === "tel" ? "ltr" : undefined

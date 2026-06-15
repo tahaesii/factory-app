@@ -1,8 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
-  Plus, Search, Filter, Edit, Trash2, Eye, Download, Upload,
-  ChevronLeft, ChevronRight, ChevronDown, X
-} from 'lucide-react';
+  Plus,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
+  Eye,
+  Download,
+  Upload,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  X,
+} from "lucide-react";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -28,7 +38,7 @@ export interface DataTableProps<T> {
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   onView?: (row: T) => void;
-  onExport?: () => void;
+  onExport?: (type: "excel" | "pdf") => void;
   onImport?: () => void;
   addLabel?: string;
   selectable?: boolean;
@@ -42,7 +52,7 @@ export default function DataTable<T extends { id: string }>({
   title,
   icon,
   searchable = true,
-  searchPlaceholder = 'جستجو...',
+  searchPlaceholder = "جستجو...",
   filterable = true,
   exportable = true,
   importable = false,
@@ -53,28 +63,29 @@ export default function DataTable<T extends { id: string }>({
   onView,
   onExport,
   onImport,
-  addLabel = 'افزودن',
+  addLabel = "افزودن",
   selectable = false,
   actions = true,
-  emptyMessage = 'داده‌ای یافت نشد',
+  emptyMessage = "داده‌ای یافت نشد",
 }: DataTableProps<T>) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const filteredData = useMemo(() => {
     let result = [...data];
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter((row) =>
         columns.some((col) => {
           const value = (row as any)[col.key];
           return value?.toString().toLowerCase().includes(query);
-        })
+        }),
       );
     }
 
@@ -83,7 +94,7 @@ export default function DataTable<T extends { id: string }>({
         const aVal = (a as any)[sortColumn];
         const bVal = (b as any)[sortColumn];
         const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-        return sortDirection === 'asc' ? comparison : -comparison;
+        return sortDirection === "asc" ? comparison : -comparison;
       });
     }
 
@@ -93,15 +104,15 @@ export default function DataTable<T extends { id: string }>({
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortColumn(columnKey);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -141,12 +152,18 @@ export default function DataTable<T extends { id: string }>({
                 <Search size={14} className="text-muted" />
                 <input
                   value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder={searchPlaceholder}
                   className="bg-transparent border-none outline-none text-sm text-primary py-2 px-2 w-40 lg:w-56"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="text-muted hover:text-primary">
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="text-muted hover:text-primary"
+                  >
                     <X size={12} />
                   </button>
                 )}
@@ -155,19 +172,66 @@ export default function DataTable<T extends { id: string }>({
             {filterable && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-xl transition-all ${showFilters ? 'bg-blue-600 text-white' : 'text-muted hover:text-primary hover:bg-card'}`}
+                className={`p-2 rounded-xl transition-all ${showFilters ? "bg-blue-600 text-white" : "text-muted hover:text-primary hover:bg-card"}`}
               >
                 <Filter size={16} />
               </button>
             )}
             {exportable && (
-              <button
-                onClick={onExport}
-                className="p-2 text-muted hover:text-primary hover:bg-card rounded-xl transition-all"
-                title="خروجی اکسل"
-              >
-                <Download size={16} />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setExportMenuOpen((p) => !p)}
+                  className="p-2 text-muted hover:text-primary hover:bg-card rounded-xl transition-all"
+                  title="خروجی"
+                >
+                  <Download size={16} />
+                </button>
+
+                {exportMenuOpen && (
+                  <>
+                    {/* overlay */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setExportMenuOpen(false)}
+                    />
+
+                    {/* menu */}
+                    <div className="absolute right-0 mt-2 w-40 bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg z-20 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          setExportMenuOpen(false);
+                          onExport?.("excel");
+                        }}
+                        className="w-full text-right px-3 py-2 text-sm text-white hover:bg-zinc-800"
+                      >
+                        Excel
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setExportMenuOpen(false);
+                          onExport?.("pdf");
+                        }}
+                        className="w-full text-right px-3 py-2 text-sm text-white hover:bg-zinc-800"
+                      >
+                        PDF
+                      </button>
+
+                      {onImport && (
+                        <button
+                          onClick={() => {
+                            setExportMenuOpen(false);
+                            onImport();
+                          }}
+                          className="w-full text-right px-3 py-2 text-sm text-white hover:bg-zinc-800 border-t border-zinc-800"
+                        >
+                          ⬆ Import
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
             {importable && (
               <button
@@ -199,7 +263,10 @@ export default function DataTable<T extends { id: string }>({
                 <th className="px-4 py-3 w-12">
                   <input
                     type="checkbox"
-                    checked={selectedRows.size === paginatedData.length && paginatedData.length > 0}
+                    checked={
+                      selectedRows.size === paginatedData.length &&
+                      paginatedData.length > 0
+                    }
                     onChange={toggleSelectAll}
                     className="w-4 h-4 rounded bg-zinc-700 border-zinc-600 text-blue-600 focus:ring-blue-500"
                   />
@@ -208,23 +275,27 @@ export default function DataTable<T extends { id: string }>({
               {columns.map((col) => (
                 <th
                   key={col.key as string}
-                  className={`text-right text-xs font-medium text-muted px-4 py-3 whitespace-nowrap ${col.sortable !== false ? 'cursor-pointer hover:text-primary' : ''}`}
+                  className={`text-right text-xs font-medium text-muted px-4 py-3 whitespace-nowrap ${col.sortable !== false ? "cursor-pointer hover:text-primary" : ""}`}
                   style={col.width ? { width: col.width } : undefined}
-                  onClick={() => col.sortable !== false && handleSort(col.key as string)}
+                  onClick={() =>
+                    col.sortable !== false && handleSort(col.key as string)
+                  }
                 >
                   <div className="flex items-center gap-1">
                     {col.title}
                     {sortColumn === col.key && (
                       <ChevronDown
                         size={12}
-                        className={`transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                        className={`transition-transform ${sortDirection === "desc" ? "rotate-180" : ""}`}
                       />
                     )}
                   </div>
                 </th>
               ))}
               {actions && (onView || onEdit || onDelete) && (
-                <th className="text-right text-xs font-medium text-muted px-4 py-3 w-28">عملیات</th>
+                <th className="text-right text-xs font-medium text-muted px-4 py-3 w-28">
+                  عملیات
+                </th>
               )}
             </tr>
           </thead>
@@ -232,7 +303,9 @@ export default function DataTable<T extends { id: string }>({
             {paginatedData.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length + (selectable ? 1 : 0) + (actions ? 1 : 0)}
+                  colSpan={
+                    columns.length + (selectable ? 1 : 0) + (actions ? 1 : 0)
+                  }
                   className="px-4 py-12 text-center text-muted"
                 >
                   {emptyMessage}
@@ -243,7 +316,7 @@ export default function DataTable<T extends { id: string }>({
                 <tr
                   key={row.id}
                   className={`border-b border-default hover:bg-card transition-colors ${
-                    selectedRows.has(row.id) ? 'bg-blue-600/5' : ''
+                    selectedRows.has(row.id) ? "bg-blue-600/5" : ""
                   }`}
                 >
                   {selectable && (
@@ -257,7 +330,10 @@ export default function DataTable<T extends { id: string }>({
                     </td>
                   )}
                   {columns.map((col) => (
-                    <td key={col.key as string} className="px-4 py-3 text-sm text-primary">
+                    <td
+                      key={col.key as string}
+                      className="px-4 py-3 text-sm text-primary"
+                    >
                       {col.render
                         ? col.render((row as any)[col.key], row, rowIndex)
                         : (row as any)[col.key]}
@@ -307,7 +383,9 @@ export default function DataTable<T extends { id: string }>({
       {totalPages > 1 && (
         <div className="p-3 border-t border-default flex items-center justify-between">
           <span className="text-xs text-muted">
-            نمایش {(currentPage - 1) * pageSize + 1} تا {Math.min(currentPage * pageSize, filteredData.length)} از {filteredData.length}
+            نمایش {(currentPage - 1) * pageSize + 1} تا{" "}
+            {Math.min(currentPage * pageSize, filteredData.length)} از{" "}
+            {filteredData.length}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -326,8 +404,8 @@ export default function DataTable<T extends { id: string }>({
                   onClick={() => setCurrentPage(page)}
                   className={`px-2.5 py-1 text-xs rounded ${
                     currentPage === page
-                      ? 'bg-blue-600 text-white'
-                      : 'text-secondary hover:bg-card'
+                      ? "bg-blue-600 text-white"
+                      : "text-secondary hover:bg-card"
                   }`}
                 >
                   {page}
@@ -335,7 +413,9 @@ export default function DataTable<T extends { id: string }>({
               );
             })}
             <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
               disabled={currentPage === totalPages}
               className="p-1.5 hover:bg-card rounded disabled:opacity-30 disabled:cursor-not-allowed text-secondary"
             >
