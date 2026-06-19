@@ -46,7 +46,7 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-export default function DataTable<T extends { id: string }>({
+export default function DataTable<T extends { id: number }>({
   data,
   columns,
   title,
@@ -72,7 +72,7 @@ export default function DataTable<T extends { id: string }>({
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
@@ -124,13 +124,15 @@ export default function DataTable<T extends { id: string }>({
     }
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: number) => {
     const newSelected = new Set(selectedRows);
+
     if (newSelected.has(id)) {
       newSelected.delete(id);
     } else {
       newSelected.add(id);
     }
+
     setSelectedRows(newSelected);
   };
 

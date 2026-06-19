@@ -11,25 +11,25 @@ import type {
 // ==========================================
 
 export const shifts: Shift[] = [
-  { id: 'SH-001', name: 'شیفت صبح', code: 'MORNING', startTime: '06:00', endTime: '14:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3, 4], status: 'active' },
-  { id: 'SH-002', name: 'شیفت عصر', code: 'EVENING', startTime: '14:00', endTime: '22:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3, 4], status: 'active' },
-  { id: 'SH-003', name: 'شیفت شب', code: 'NIGHT', startTime: '22:00', endTime: '06:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3, 4], status: 'active' },
-  { id: 'SH-004', name: 'شیفت روزانه', code: 'DAY', startTime: '08:00', endTime: '17:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3], status: 'active' },
+  { id: 'morning', name: 'شیفت صبح', code: 'MORNING', startTime: '06:00', endTime: '14:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3, 4], status: 'active' },
+  { id: 'afternoon', name: 'شیفت عصر', code: 'EVENING', startTime: '14:00', endTime: '22:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3, 4], status: 'active' },
+  { id: 'night', name: 'شیفت شب', code: 'NIGHT', startTime: '22:00', endTime: '06:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3, 4], status: 'active' },
+  { id: 'full_day', name: 'شیفت روزانه', code: 'DAY', startTime: '08:00', endTime: '17:00', breakMinutes: 60, workingDays: [6, 0, 1, 2, 3], status: 'active' },
 ];
 
 export const roles: Role[] = [
-  { id: 'R-001', name: 'مدیر سیستم', nameEn: 'Super Admin', description: 'دسترسی کامل به تمام بخش‌ها', level: 1, permissions: [], isSystem: true, createdAt: '1403/01/01' },
-  { id: 'R-002', name: 'مالک کارخانه', nameEn: 'Factory Owner', description: 'مالک و تصمیم‌گیرنده نهایی', level: 2, permissions: [], isSystem: true, createdAt: '1403/01/01' },
-  { id: 'R-003', name: 'مدیرعامل', nameEn: 'CEO', description: 'مدیریت اجرایی کل کارخانه', level: 3, permissions: [], isSystem: true, createdAt: '1403/01/01' },
-  { id: 'R-004', name: 'مدیر کارخانه', nameEn: 'Plant Manager', description: 'مدیریت عملیات کارخانه', level: 4, permissions: [], isSystem: true, createdAt: '1403/01/01' },
-  { id: 'R-005', name: 'مدیر واحد', nameEn: 'Department Manager', description: 'مدیریت یک واحد سازمانی', level: 5, permissions: [], isSystem: true, createdAt: '1403/01/01' },
-  { id: 'R-006', name: 'سرپرست', nameEn: 'Supervisor', description: 'سرپرستی تیم یا خط تولید', level: 6, permissions: [], isSystem: true, createdAt: '1403/01/01' },
-  { id: 'R-007', name: 'اپراتور', nameEn: 'Operator', description: 'اپراتور خط تولید', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
-  { id: 'R-008', name: 'کاربر انبار', nameEn: 'Warehouse User', description: 'کاربر عملیات انبار', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
-  { id: 'R-009', name: 'کاربر نت', nameEn: 'Maintenance User', description: 'تکنسین نگهداری و تعمیرات', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
-  { id: 'R-010', name: 'کاربر HSE', nameEn: 'HSE User', description: 'کارشناس ایمنی و بهداشت', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
-  { id: 'R-011', name: 'کاربر HR', nameEn: 'HR User', description: 'کارشناس منابع انسانی', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
-  { id: 'R-012', name: 'مهمان', nameEn: 'Guest', description: 'دسترسی فقط خواندن', level: 10, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'super_admin', name: 'مدیر سیستم', nameEn: 'Super Admin', description: 'دسترسی کامل به تمام بخش‌ها', level: 1, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'factory_owner', name: 'مالک کارخانه', nameEn: 'Factory Owner', description: 'مالک و تصمیم‌گیرنده نهایی', level: 2, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'factory_ceo', name: 'مدیرعامل', nameEn: 'CEO', description: 'مدیریت اجرایی کل کارخانه', level: 3, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'factory_admin', name: 'مدیر کارخانه', nameEn: 'Plant Manager', description: 'مدیریت عملیات کارخانه', level: 4, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'unit_manager', name: 'مدیر واحد', nameEn: 'Department Manager', description: 'مدیریت یک واحد سازمانی', level: 5, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'supervisor', name: 'سرپرست', nameEn: 'Supervisor', description: 'سرپرستی تیم یا خط تولید', level: 6, permissions: [], isSystem: true, createdAt: '1403/01/01' },
+  { id: 'operator', name: 'اپراتور', nameEn: 'Operator', description: 'اپراتور خط تولید', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
+  { id: 'warehouse_user', name: 'کاربر انبار', nameEn: 'Warehouse User', description: 'کاربر عملیات انبار', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
+  { id: 'network_user', name: 'کاربر نت', nameEn: 'Maintenance User', description: 'تکنسین نگهداری و تعمیرات', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
+  { id: 'hse_user', name: 'کاربر HSE', nameEn: 'HSE User', description: 'کارشناس ایمنی و بهداشت', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
+  { id: 'hr_user', name: 'کاربر HR', nameEn: 'HR User', description: 'کارشناس منابع انسانی', level: 7, permissions: [], isSystem: false, createdAt: '1403/01/01' },
+  { id: 'guest', name: 'مهمان', nameEn: 'Guest', description: 'دسترسی فقط خواندن', level: 10, permissions: [], isSystem: true, createdAt: '1403/01/01' },
 ];
 
 export const users: User[] = [
