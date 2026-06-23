@@ -17,18 +17,3 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
-
-const getUnits = async () => {
-  try {
-
-    const response = await api.get("/api/accounts/units/", {
-
-    });
-
-    console.log("Units:", response.data);
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-getUnits();

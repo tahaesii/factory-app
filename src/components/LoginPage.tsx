@@ -14,14 +14,14 @@ import {
 import OTPPage from "./OtpPage";
 
 const feat = [
-  { icon: Cpu, label: "AI-Powered Analytics" },
-  { icon: Shield, label: "Military-Grade Security" },
-  { icon: Zap, label: "Real-Time IoT" },
-  { icon: Database, label: "Enterprise ERP" },
-  { icon: Globe, label: "Multi-Tenant SaaS" },
-  { icon: BarChart3, label: "Advanced Visualization" },
-  { icon: Cog, label: "MES Integration" },
-  { icon: Layers, label: "No-Code Platform" },
+  { icon: Cpu, label: "هوش مصنوعی پیشرفته" },
+  { icon: Shield, label: "امنیت سازمانی" },
+  { icon: Zap, label: "IoT بلادرنگ" },
+  { icon: Database, label: "ERP سازمانی" },
+  { icon: Globe, label: "SaaS چندمستاجری" },
+  { icon: BarChart3, label: "داشبوردهای تحلیلی" },
+  { icon: Cog, label: "یکپارچه‌سازی MES" },
+  { icon: Layers, label: "بدون نیاز به کدنویسی" },
 ];
 
 export default function LoginPage() {
@@ -31,15 +31,15 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLoginSuccess = (
-  phone: string,
-  nationalCode: string,
-  rememberMe: boolean
-) => {
-  setPhoneNumber(phone);
-  setNationalCode(nationalCode);
-  setRememberMe(rememberMe);
-  setShowOtp(true);
-};
+    phone: string,
+    nationalCode: string,
+    rememberMe: boolean,
+  ) => {
+    setPhoneNumber(phone);
+    setNationalCode(nationalCode);
+    setRememberMe(rememberMe);
+    setShowOtp(true);
+  };
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
@@ -55,23 +55,22 @@ export default function LoginPage() {
       <div className="absolute bottom-40 right-10 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl" />
       <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl" />
       <div className="w-full lg:w-1/2 items-center justify-center relative z-10">
-      {showOtp ? (
-        <OTPPage
-          phoneNumber={phoneNumber}
-          nationalCode={nationalCode}
-          rememberMe={rememberMe}
-          onBack={() => setShowOtp(false)}
-        />
-      ) : (
-        <LoginForm onSuccess={handleLoginSuccess}/>
-      )}
-        
+        {showOtp ? (
+          <OTPPage
+            phoneNumber={phoneNumber}
+            nationalCode={nationalCode}
+            rememberMe={rememberMe}
+            onBack={() => setShowOtp(false)}
+          />
+        ) : (
+          <LoginForm onSuccess={handleLoginSuccess} />
+        )}
       </div>
       <LoginBranding
-        title="Revolutionizing"
-        subtitle="Industry 4.0"
+        title="تحول‌آفرین در صنعت"
+        subtitle="صنعت ۴.۰"
         brandName="FACTORY OS X PRO"
-        brandDescription="Next-Gen Platform"
+        brandDescription="پلتفرم نسل آینده"
         features={feat.slice(0, 8)}
       />
     </div>

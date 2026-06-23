@@ -495,6 +495,16 @@ export interface Shift {
   status: 'active' | 'inactive';
 }
 
+export interface EmploymentType {
+  value: string;
+  label: string;
+}
+
+export interface Status {
+  value: string;
+  label: string;
+}
+
 export interface SelectOption {
   value: string;
   label: string;

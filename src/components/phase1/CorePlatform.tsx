@@ -30,6 +30,8 @@ import {
   files,
   shifts,
   coreStatistics,
+  employment_type,
+  status,
 } from "@/data/phase1Data";
 import {
   AreaChart,
@@ -49,6 +51,8 @@ import type { User, AuditLog, Role, FileRecord } from "@/types";
 import { uid } from "@/services/dataService";
 import { api } from "@/services/api";
 import { userService } from "@/services/userService";
+import { useAuthStore } from "@/store/authStore";
+import { fieldsService } from "@/services/fieldsService";
 
 export function CorePlatformModule() {
   const currentPage = useAppStore((s) => s.currentPage);
@@ -295,14 +299,27 @@ function CoreDashboard() {
 function UsersPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserApi | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [localUsers, setLocalUsers] = useState<UserApi[]>([]);
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState<number | null>(null);
   const [viewingUser, setViewingUser] = useState<UserApi | null>(null);
+  const factory = useAuthStore.getState().user?.factory;
 
   useEffect(() => {
     fetchUsers();
+    fetchUnits();
   }, []);
+
+  const fetchUnits = async () => {
+    try {
+      const response = await fieldsService.getUnit();
+      console.log("Units:", response);
+      setUnits(response.filter((unit: Unit) => unit.factory === factory));
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -315,6 +332,14 @@ function UsersPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  type Unit = {
+    id: number;
+    name: string;
+    factory: number;
+    is_active: boolean;
+    created_at: string;
   };
 
   type UserApi = {
@@ -370,16 +395,8 @@ function UsersPage() {
       key: "unit",
       title: "واحد",
       render: (v) => {
-        const deptNames: Record<string, string> = {
-          "D-001": "مدیریت ارشد",
-          "D-002": "مدیریت کارخانه",
-          "D-003": "تولید",
-          "D-004": "انبار",
-          "D-005": "منابع انسانی",
-          "D-006": "نت",
-          "D-007": "HSE",
-        };
-        return deptNames[v] || v;
+        const unit = units.find((u) => u.id === Number(v));
+        return unit?.name || "-";
       },
     },
     {
@@ -464,15 +481,10 @@ function UsersPage() {
       label: "واحد",
       type: "select",
       required: true,
-      options: [
-        { value: "1", label: "آزمایشگاه" },
-        { value: "D-002", label: "مدیریت کارخانه" },
-        { value: "D-003", label: "تولید" },
-        { value: "D-004", label: "انبار و لجستیک" },
-        { value: "D-005", label: "منابع انسانی" },
-        { value: "D-006", label: "نگهداری و تعمیرات" },
-        { value: "D-007", label: "ایمنی و بهداشت" },
-      ],
+      options: units.map((unit) => ({
+        value: String(unit.id),
+        label: unit.name,
+      })),
     },
     {
       name: "role",
@@ -493,23 +505,14 @@ function UsersPage() {
       label: "نوع استخدام",
       type: "select",
       required: true,
-      options: [
-        { value: "full-time", label: "تمام‌وقت" },
-        { value: "part-time", label: "پاره‌وقت" },
-        { value: "contract", label: "قراردادی" },
-        { value: "intern", label: "کارآموز" },
-      ],
+      options: employment_type.map((e) => ({ value: e.value, label: e.label })),
     },
     {
       name: "status",
       label: "وضعیت",
       type: "select",
       required: true,
-      options: [
-        { value: "active", label: "فعال" },
-        { value: "inactive", label: "غیرفعال" },
-        { value: "suspended", label: "تعلیق" },
-      ],
+      options: status.map((s) => ({ value: s.value, label: s.label })),
     },
   ];
 
@@ -527,6 +530,10 @@ function UsersPage() {
         columns={columns}
         title="لیست کاربران"
         icon={<Users size={18} className="text-blue-500" />}
+        onAdd={() => {
+          setEditingUser(null);
+          setShowModal(true);
+        }}
         onEdit={(user) => {
           setViewingUser(null);
           setEditingUser(user);
@@ -539,7 +546,6 @@ function UsersPage() {
           setShowModal(true);
         }}
         addLabel="کاربر جدید"
-        selectable
       />
 
       <FormModal
@@ -550,11 +556,9 @@ function UsersPage() {
           setViewingUser(null);
         }}
         onSubmit={async (data) => {
-          console.log("Form Data:", data);
           const payload = {
             ...data,
-            factory: 8,
-            password: "12345678",
+            factory,
           };
           try {
             if (editingUser) {
