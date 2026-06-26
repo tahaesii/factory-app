@@ -996,12 +996,18 @@ function HistorianPage() {
   const [chartData, setChartData] = useState<{ time: string; value: number }[]>(
     [],
   );
+  const [selectedWindow, setSelectedWindow] = useState("5m");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadSensors();
   }, []);
 
+  useEffect(() => {
+    if (!selectedSensor) return;
+
+    loadReadings();
+  }, [selectedSensor, selectedRange, selectedWindow]);
   const loadSensors = async () => {
     try {
       const data = await telemetryService.getSensors();
@@ -1029,6 +1035,7 @@ function HistorianPage() {
       const data = await telemetryService.getReadings({
         sensor: selectedSensor,
         start: selectedRange,
+        window: selectedWindow,
       });
 
       const formatted = data.points.map((point) => ({
@@ -1078,6 +1085,16 @@ function HistorianPage() {
             <option value="-24h">24 Hours</option>
             <option value="-7d">7 Days</option>
             <option value="-30d">30 Days</option>
+          </select>
+          <select
+            value={selectedWindow}
+            onChange={(e) => setSelectedWindow(e.target.value)}
+            className="bg-card border border-default rounded-xl px-3 py-2 text-primary text-sm"
+          >
+            <option value="3m">3 Minutes</option>
+            <option value="5m">5 Minutes</option>
+            <option value="10m">10 Minutes</option>
+            <option value="15m">15 Minutes</option>
           </select>
         </div>
         <ResponsiveContainer width="100%" height={300}>
