@@ -302,7 +302,6 @@ function UsersPage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [localUsers, setLocalUsers] = useState<UserApi[]>([]);
   const [loading, setLoading] = useState(false);
-  const [removing, setRemoving] = useState<number | null>(null);
   const [viewingUser, setViewingUser] = useState<UserApi | null>(null);
   const factory = useAuthStore.getState().user?.factory;
 

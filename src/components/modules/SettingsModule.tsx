@@ -13,7 +13,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronLeft,
-  X,
 } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
@@ -202,7 +201,13 @@ function FieldOptionsPage() {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openParents, setOpenParents] = useState<Record<number, boolean>>({});
+  const [removing, setRemoving] = useState<{
+    id: number;
+    type: string;
+    name: string;
+  } | null>(null);
   const user = useAuthStore((s) => s.user);
+  const factory = useAuthStore.getState().user?.factory;
   const loadData = async () => {
     try {
       setLoading(true);
@@ -220,8 +225,8 @@ function FieldOptionsPage() {
   }, []);
 
   const parentFieldOptions = parentFields.map((field) => ({
-    label: field.persian_name,
-    value: field.id,
+    label: field.label,
+    value: field.key,
   }));
   const fields: FormField[] = [
     {
@@ -255,7 +260,6 @@ function FieldOptionsPage() {
   const handleDelete = async (id: number, type: string) => {
     try {
       await fieldsService.deleteChoice(id, type);
-
       await loadData();
     } catch (err) {
       console.error(err);
@@ -263,16 +267,19 @@ function FieldOptionsPage() {
   };
 
   const handleCreateChoice = async (data: Record<string, any>) => {
+    console.log(data.parentField);
     try {
       await fieldsService.createChoice(data.parentField, {
         code: data.code,
         label: data.label,
+        factory,
         is_active: true,
       });
 
       setIsModalOpen(false);
       await loadData();
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error.response?.data);
       console.error(error);
     }
   };
@@ -314,24 +321,22 @@ function FieldOptionsPage() {
               >
                 <div className="flex items-center gap-3">
                   <Building2 className="w-5 h-5 text-blue-400" />
-                  <span className="text-white font-medium">
-                    {parent.persian_name}
-                  </span>
-
+                  <span className="text-white font-medium">{parent.label}</span>
+                </div>
+                <div className="flex items-center gap-3">
                   <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-full">
                     {parent.items.length}
                   </span>
+                  {openParents[parent.id] ? (
+                    <ChevronDown className="text-zinc-400" />
+                  ) : (
+                    <ChevronLeft className="text-zinc-400" />
+                  )}
                 </div>
-
-                {openParents[parent.id] ? (
-                  <ChevronDown className="text-zinc-400" />
-                ) : (
-                  <ChevronLeft className="text-zinc-400" />
-                )}
               </button>
 
               {openParents[parent.id] && (
-                <div className="px-5 pb-5 flex flex-wrap gap-3">
+                <div className="px-5 pt-5 pb-5 flex flex-wrap gap-3 items-center content-start">
                   {parent.items.length === 0 ? (
                     <p className="text-zinc-500 text-sm">
                       گزینه‌ای وجود ندارد.
@@ -342,11 +347,15 @@ function FieldOptionsPage() {
                         key={item.id}
                         className="flex items-center gap-2 bg-zinc-800 rounded-full px-4 py-2"
                       >
-                        <span className="text-white">{item.persian_name}</span>
+                        <span className="text-white">{item.label}</span>
 
                         <button
                           onClick={() =>
-                            handleDelete(item.id, parent.english_name)
+                            setRemoving({
+                              id: item.id,
+                              type: parent.key,
+                              name: item.label,
+                            })
                           }
                           className="text-red-400 hover:text-red-300"
                         >
@@ -354,6 +363,49 @@ function FieldOptionsPage() {
                         </button>
                       </div>
                     ))
+                  )}
+                  {removing && (
+                    <div
+                      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
+                      onClick={() => setRemoving(null)}
+                    >
+                      <div
+                        className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-sm w-full mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <h3 className="text-white font-bold mb-2">حذف گزینه</h3>
+
+                        <p className="text-zinc-400 text-sm mb-5">
+                          آیا از حذف گزینه{" "}
+                          <span className="text-white font-medium">
+                            {removing.name}
+                          </span>{" "}
+                          اطمینان دارید؟
+                        </p>
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setRemoving(null)}
+                            className="px-4 py-2 bg-zinc-700 text-white rounded-xl"
+                          >
+                            انصراف
+                          </button>
+
+                          <button
+                            onClick={async () => {
+                              try {
+                                await handleDelete(removing.id, removing.type);
+                              } finally {
+                                setRemoving(null);
+                              }
+                            }}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                          >
+                            حذف
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

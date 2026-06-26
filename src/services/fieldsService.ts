@@ -18,15 +18,14 @@ export interface UnitItem {
 
 export interface ParentFieldItem {
   id: number;
-  english_name: string;
-  persian_name: string;
+  label: string;
   factory: string;
 }
 
 export interface ParentField {
   id: number;
-  english_name: string;
-  persian_name: string;
+  label:string;
+  key:string;
   items: ParentFieldItem[];
 }
 
@@ -51,6 +50,7 @@ export const fieldsService = {
     payload: {
       code: string;
       label: string;
+      factory: number | undefined;
       is_active: boolean;
     },
   ) => {
