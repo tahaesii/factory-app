@@ -539,7 +539,6 @@ function UsersPage() {
           setEditingUser(user);
           setShowModal(true);
         }}
-        onDelete={(user) => setRemoving(user.id)}
         onView={(user) => {
           setEditingUser(null);
           setViewingUser(user);
@@ -591,41 +590,6 @@ function UsersPage() {
         initialData={viewingUser || editingUser || {}}
         size="lg"
       />
-      {removing && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
-          onClick={() => setRemoving(null)}
-        >
-          <div
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-sm m-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-white font-bold mb-2">حذف کاربر</h3>
-            <p className="text-zinc-400 text-sm mb-4">
-              آیا از حذف این کاربر اطمینان دارید؟ این عملیات برگشت‌پذیر نیست.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setRemoving(null)}
-                className="px-4 py-2 bg-zinc-700 text-white rounded-xl text-sm"
-              >
-                انصراف
-              </button>
-              <button
-                onClick={() => {
-                  setLocalUsers((prev) =>
-                    prev.filter((u) => u.id !== removing),
-                  );
-                  setRemoving(null);
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-xl text-sm"
-              >
-                حذف
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

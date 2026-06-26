@@ -48,6 +48,8 @@ interface FormModalProps {
   size?: "sm" | "md" | "lg" | "xl";
 }
 
+const EMPTY_OBJECT = {};
+
 export default function FormModal({
   isOpen,
   onClose,
@@ -57,7 +59,7 @@ export default function FormModal({
   submitLabel = "ذخیره",
   cancelLabel = "انصراف",
   loading = false,
-  initialData = {},
+  initialData = EMPTY_OBJECT,
   size = "md",
 }: FormModalProps) {
   const [formData, setFormData] = useState<Record<string, any>>(() => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Shield,
   GitBranch,
@@ -11,11 +11,15 @@ import {
   Plus,
   Edit,
   Trash2,
+  ChevronDown,
+  ChevronLeft,
+  X,
 } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
 import { modules } from "@/data/modules";
-import { fieldsService } from "@/services/fieldsService";
+import { fieldsService, ParentField } from "@/services/fieldsService";
+import FormModal, { FormField } from "../ui/FormModal";
 
 export function SettingsModule() {
   const currentPage = useAppStore((s) => s.currentPage);
@@ -194,25 +198,86 @@ function GeneralSettings() {
 }
 
 function FieldOptionsPage() {
+  const [parentFields, setParentFields] = useState<ParentField[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openParents, setOpenParents] = useState<Record<number, boolean>>({});
   const user = useAuthStore((s) => s.user);
-
-  const allowedRoles = ["super_admin", "factory_admin"];
-
-  const handleSubmit = async () => {
+  const loadData = async () => {
     try {
-      const payload = {
-        name: "آزمایشگاه",
-        factory: 8,
-        is_active: true,
-      };
+      setLoading(true);
 
-      const response = await fieldsService.createUnit(payload);
-      console.log(response);
-    } catch (error) {
-      console.error(error);
-      alert("خطا در ثبت اطلاعات");
+      const response = await fieldsService.getChoices();
+
+      setParentFields(response);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const parentFieldOptions = parentFields.map((field) => ({
+    label: field.persian_name,
+    value: field.id,
+  }));
+  const fields: FormField[] = [
+    {
+      name: "parentField",
+      label: "فیلد مادر",
+      type: "select",
+      required: true,
+      options: parentFieldOptions,
+    },
+    {
+      name: "code",
+      label: "کد",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "label",
+      label: "عنوان",
+      type: "text",
+      required: true,
+    },
+  ];
+
+  const toggleParent = (id: number) => {
+    setOpenParents((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleDelete = async (id: number, type: string) => {
+    try {
+      await fieldsService.deleteChoice(id, type);
+
+      await loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCreateChoice = async (data: Record<string, any>) => {
+    try {
+      await fieldsService.createChoice(data.parentField, {
+        code: data.code,
+        label: data.label,
+        is_active: true,
+      });
+
+      setIsModalOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const allowedRoles = ["super_admin", "factory_admin"];
 
   if (!user || !allowedRoles.includes(user.role)) {
     return (
@@ -223,23 +288,88 @@ function FieldOptionsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">گزینه های فیلد</h2>
+    <>
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-white">گزینه های فیلد</h2>
 
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl text-white"
-          onClick={handleSubmit}
-        >
-          <Plus size={16} />
-          افزودن فیلد
-        </button>
-      </div>
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-xl text-white"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Plus size={16} />
+            افزودن گزینه
+          </button>
+        </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-        <p className="text-zinc-400">مدیریت گزینه‌های فیلدهای لیستی</p>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+          {parentFields.map((parent) => (
+            <div
+              key={parent.id}
+              className="border border-zinc-800 rounded-xl overflow-hidden"
+            >
+              <button
+                onClick={() => toggleParent(parent.id)}
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-zinc-800 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-5 h-5 text-blue-400" />
+                  <span className="text-white font-medium">
+                    {parent.persian_name}
+                  </span>
+
+                  <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-full">
+                    {parent.items.length}
+                  </span>
+                </div>
+
+                {openParents[parent.id] ? (
+                  <ChevronDown className="text-zinc-400" />
+                ) : (
+                  <ChevronLeft className="text-zinc-400" />
+                )}
+              </button>
+
+              {openParents[parent.id] && (
+                <div className="px-5 pb-5 flex flex-wrap gap-3">
+                  {parent.items.length === 0 ? (
+                    <p className="text-zinc-500 text-sm">
+                      گزینه‌ای وجود ندارد.
+                    </p>
+                  ) : (
+                    parent.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 bg-zinc-800 rounded-full px-4 py-2"
+                      >
+                        <span className="text-white">{item.persian_name}</span>
+
+                        <button
+                          onClick={() =>
+                            handleDelete(item.id, parent.english_name)
+                          }
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+      <FormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateChoice}
+        title="افزودن گزینه جدید"
+        fields={fields}
+        submitLabel="ثبت"
+      />
+    </>
   );
 }
 

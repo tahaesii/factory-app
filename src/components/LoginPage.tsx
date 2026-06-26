@@ -54,6 +54,13 @@ export default function LoginPage() {
       <div className="absolute top-20 left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
       <div className="absolute bottom-40 right-10 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl" />
       <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl" />
+      <LoginBranding
+        title="تحول‌آفرین در صنعت"
+        subtitle="صنعت ۴.۰"
+        brandName="FACTORY OS X PRO"
+        brandDescription="پلتفرم نسل آینده"
+        features={feat.slice(0, 8)}
+      />
       <div className="w-full lg:w-1/2 items-center justify-center relative z-10">
         {showOtp ? (
           <OTPPage
@@ -66,13 +73,6 @@ export default function LoginPage() {
           <LoginForm onSuccess={handleLoginSuccess} />
         )}
       </div>
-      <LoginBranding
-        title="تحول‌آفرین در صنعت"
-        subtitle="صنعت ۴.۰"
-        brandName="FACTORY OS X PRO"
-        brandDescription="پلتفرم نسل آینده"
-        features={feat.slice(0, 8)}
-      />
     </div>
   );
 }
