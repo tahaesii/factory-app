@@ -299,24 +299,64 @@ function CoreDashboard() {
 function UsersPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserApi | null>(null);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [choices, setChoices] = useState<ChoicesResponse>({
+    roles: [],
+    shifts: [],
+    employment_types: [],
+    statuses: [],
+    units: [],
+  });
   const [localUsers, setLocalUsers] = useState<UserApi[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewingUser, setViewingUser] = useState<UserApi | null>(null);
   const factory = useAuthStore.getState().user?.factory;
 
+  type ChoiceItem = {
+    id: number;
+    code: string;
+    label: string;
+    factory: number;
+    is_active: boolean;
+    created_at: string;
+  };
+
+  type ChoicesResponse = {
+    roles: ChoiceItem[];
+    shifts: ChoiceItem[];
+    employment_types: ChoiceItem[];
+    statuses: ChoiceItem[];
+    units: ChoiceItem[];
+  };
+
   useEffect(() => {
-    fetchUsers();
-    fetchUnits();
+    const load = async () => {
+      await fetchUsers();
+      fetchChoices();
+    };
+
+    load();
   }, []);
 
-  const fetchUnits = async () => {
+  const fetchChoices = async () => {
     try {
-      const response = await fieldsService.getUnit();
-      console.log("Units:", response);
-      setUnits(response.filter((unit: Unit) => unit.factory === factory));
-    } catch (error) {
-      console.error(error);
+      const response = await fieldsService.getChoices();
+
+      const getItems = (key: string): ChoiceItem[] =>
+        (
+          response.find((item) => item.key === key)?.items as
+            | ChoiceItem[]
+            | undefined
+        )?.filter((i) => i.factory === factory) ?? [];
+
+      setChoices({
+        roles: getItems("roles"),
+        shifts: getItems("shifts"),
+        employment_types: getItems("employment_types"),
+        statuses: getItems("statuses"),
+        units: getItems("units"),
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -331,14 +371,6 @@ function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  type Unit = {
-    id: number;
-    name: string;
-    factory: number;
-    is_active: boolean;
-    created_at: string;
   };
 
   type UserApi = {
@@ -394,18 +426,18 @@ function UsersPage() {
       key: "unit",
       title: "واحد",
       render: (v) => {
-        const unit = units.find((u) => u.id === Number(v));
-        return unit?.name || "-";
+        const unit = choices.units.find((u) => u.id === Number(v));
+        return unit?.label || "-";
       },
     },
     {
       key: "role",
       title: "نقش",
       render: (v) => {
-        const role = roles.find((r) => r.id === v);
+        const role = choices.roles.find((r) => r.code === v);
         return (
           <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded">
-            {role?.name || v}
+            {role?.label || v}
           </span>
         );
       },
@@ -413,19 +445,23 @@ function UsersPage() {
     {
       key: "status",
       title: "وضعیت",
-      render: (v) => (
-        <span
-          className={`px-2 py-0.5 rounded-lg text-xs font-medium ${
-            v === "active"
-              ? "bg-green-500/10 text-green-500"
-              : v === "inactive"
-                ? "bg-zinc-500/10 text-zinc-500"
-                : "bg-red-500/10 text-red-500"
-          }`}
-        >
-          {v === "active" ? "فعال" : v === "inactive" ? "غیرفعال" : "تعلیق"}
-        </span>
-      ),
+      render: (v) => {
+        const status = choices.statuses.find((s) => s.code === v);
+
+        return (
+          <span
+            className={`px-2 py-0.5 rounded-lg text-xs font-medium ${
+              status?.code === "active"
+                ? "bg-green-500/10 text-green-500"
+                : status?.code === "inactive"
+                  ? "bg-zinc-500/10 text-zinc-500"
+                  : "bg-red-500/10 text-red-500"
+            }`}
+          >
+            {status?.label ?? v}
+          </span>
+        );
+      },
     },
   ];
 
@@ -480,9 +516,9 @@ function UsersPage() {
       label: "واحد",
       type: "select",
       required: true,
-      options: units.map((unit) => ({
-        value: String(unit.id),
-        label: unit.name,
+      options: choices.units.map((u) => ({
+        value: String(u.id),
+        label: u.label,
       })),
     },
     {
@@ -490,28 +526,40 @@ function UsersPage() {
       label: "نقش",
       type: "select",
       required: true,
-      options: roles.map((r) => ({ value: r.id, label: r.name })),
+      options: choices.roles.map((r) => ({
+        value: r.code,
+        label: r.label,
+      })),
     },
     {
       name: "shift",
       label: "شیفت",
       type: "select",
       required: true,
-      options: shifts.map((s) => ({ value: s.id, label: s.name })),
+      options: choices.shifts.map((s) => ({
+        value: s.code,
+        label: s.label,
+      })),
     },
     {
       name: "employment_type",
       label: "نوع استخدام",
       type: "select",
       required: true,
-      options: employment_type.map((e) => ({ value: e.value, label: e.label })),
+      options: choices.employment_types.map((e) => ({
+        value: e.code,
+        label: e.label,
+      })),
     },
     {
       name: "status",
       label: "وضعیت",
       type: "select",
       required: true,
-      options: status.map((s) => ({ value: s.value, label: s.label })),
+      options: choices.statuses.map((s) => ({
+        value: s.code,
+        label: s.label,
+      })),
     },
   ];
 

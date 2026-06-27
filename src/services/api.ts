@@ -1,4 +1,5 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 
 export const api = axios.create({
@@ -17,3 +18,20 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+let isLoggingOut = false;
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && !isLoggingOut) {
+      isLoggingOut = true;
+      toast.error("مهلت استفاده شما به اتمام رسید، دوباره وارد شوید.");
+      useAuthStore.getState().logout();
+      setTimeout(() => {
+        isLoggingOut = false;
+      }, 1000);
+    }
+
+    return Promise.reject(error);
+  }
+);

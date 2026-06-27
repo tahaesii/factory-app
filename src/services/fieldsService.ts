@@ -41,7 +41,6 @@ export const fieldsService = {
   },
   getChoices: async (): Promise<ParentField[]> => {
     const { data } = await api.get("/api/accounts/choices/");
-    console.log(data);
     return data;
   },
 
