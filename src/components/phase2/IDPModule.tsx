@@ -1039,13 +1039,9 @@ function HistorianPage() {
       });
 
       const formatted = data.points.map((point) => ({
-        time: new Date(point.time).toLocaleTimeString("fa-IR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        time: point.time.split("T")[1].slice(0, 5), // "14:35"
         value: point.value,
       }));
-
       setChartData(formatted);
     } catch (err) {
       console.error(err);
