@@ -28,10 +28,7 @@ import {
   auditLogs,
   notifications,
   files,
-  shifts,
   coreStatistics,
-  employment_type,
-  status,
 } from "@/data/phase1Data";
 import {
   AreaChart,
@@ -49,7 +46,6 @@ import {
 } from "recharts";
 import type { User, AuditLog, Role, FileRecord } from "@/types";
 import { uid } from "@/services/dataService";
-import { api } from "@/services/api";
 import { userService } from "@/services/userService";
 import { useAuthStore } from "@/store/authStore";
 import { fieldsService } from "@/services/fieldsService";
@@ -309,6 +305,8 @@ function UsersPage() {
   const [localUsers, setLocalUsers] = useState<UserApi[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewingUser, setViewingUser] = useState<UserApi | null>(null);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const factory = useAuthStore.getState().user?.factory;
 
   type ChoiceItem = {
@@ -327,15 +325,26 @@ function UsersPage() {
     statuses: ChoiceItem[];
     units: ChoiceItem[];
   };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
 
+    return () => clearTimeout(timer);
+  }, [search]);
   useEffect(() => {
     const load = async () => {
       await fetchUsers();
-      fetchChoices();
+      await fetchChoices();
     };
 
     load();
   }, []);
+  useEffect(() => {
+    fetchUsers({
+      search: debouncedSearch,
+    });
+  }, [debouncedSearch]);
 
   const fetchChoices = async () => {
     try {
@@ -360,12 +369,13 @@ function UsersPage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (params?: { search?: string }) => {
     try {
       setLoading(true);
-      const response = await userService.getUser();
-      console.log(response);
-      setLocalUsers(response);
+
+      const response = await userService.getUsers(params);
+
+      setLocalUsers(response ?? []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -574,6 +584,8 @@ function UsersPage() {
 
       <DataTable<UserApi>
         data={localUsers}
+        searchValue={search}
+        onSearchChange={setSearch}
         columns={columns}
         title="لیست کاربران"
         icon={<Users size={18} className="text-blue-500" />}

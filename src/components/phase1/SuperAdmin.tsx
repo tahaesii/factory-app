@@ -213,33 +213,43 @@ function TenantsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FactoryData | null>(null);
   const [viewing, setViewing] = useState<FactoryRow | null>(null);
-  const [localFactories, setLocalFactories] = useState<any[]>([]);
-  const [expandedFactory, setExpandedFactory] = useState<string | null>(null);
+  const [allFactories, setAllFactories] = useState<FactoryData[]>([]);
+  const [tableFactories, setTableFactories] = useState<FactoryData[]>([]);
+  const [expandedFactory, setExpandedFactory] = useState<number | null>(null);
   const [choices, setChoices] = useState<any>(null);
   const [loadingChoices, setLoadingChoices] = useState(true);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await factoryMetaService.getChoices();
-        setChoices(data);
-      } finally {
-        setLoadingChoices(false);
+        const data = await factoryService.getFactories({
+          search: debouncedSearch,
+        });
+
+        setTableFactories(data ?? []);
+      } catch (err) {
+        console.error(err);
       }
     };
 
     load();
-  }, []);
+  }, [debouncedSearch]);
   useEffect(() => {
     const load = async () => {
-      try {
-        const data = await factoryService.getFactories();
-        setLocalFactories(data ?? []);
-        console.log(localFactories);
-      } catch (err) {
-        console.error("Failed to load factories:", err);
-        setLocalFactories([]);
-      }
+      const data = await factoryService.getFactories();
+
+      setAllFactories(data ?? []);
+      setTableFactories(data ?? []);
     };
 
     load();
@@ -272,7 +282,7 @@ function TenantsPage() {
   };
 
   type FactoryRow = {
-    id: string;
+    id: number;
     code: string;
     name: string;
     ownerName: string;
@@ -287,11 +297,11 @@ function TenantsPage() {
     userLimit: number;
     expiresAt: string;
     enabledModules: string[];
-    isLicenseValid: boolean; // UI ONLY
+    isLicenseValid: boolean;
   };
 
   const mapFactory = (f: FactoryData): FactoryRow => ({
-    id: String(f.id),
+    id: f.id,
     code: f.code,
     name: f.name,
     ownerName: f.owner_name,
@@ -309,8 +319,9 @@ function TenantsPage() {
     isLicenseValid: f.is_license_valid,
   });
 
-  const normalizedFactories = localFactories.map(mapFactory);
-  console.log("normalizedFactories:", normalizedFactories);
+  const factoriesList = allFactories.map(mapFactory);
+
+  const normalizedFactories = tableFactories.map(mapFactory);
 
   const safeChoices = choices ?? {
     industry: [],
@@ -456,7 +467,6 @@ function TenantsPage() {
     { name: "ownerEmail", label: "ایمیل مالک", type: "email" },
     { name: "address", label: "آدرس", type: "textarea", colSpan: 2 },
   ];
-  const factoriesList = normalizedFactories;
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -509,6 +519,8 @@ function TenantsPage() {
       <DataTable<FactoryRow>
         data={normalizedFactories}
         columns={columns}
+        searchValue={search}
+        onSearchChange={setSearch}
         title="لیست کارخانه‌ها"
         icon={<Building2 size={18} className="text-blue-500" />}
         onAdd={() => {
@@ -558,7 +570,7 @@ function TenantsPage() {
             }
 
             const data = await factoryService.getFactories();
-            setLocalFactories(data ?? []);
+            setAllFactories(data ?? []);
             setShowModal(false);
           } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -587,7 +599,7 @@ function TenantsPage() {
         <h2 className="text-white font-bold text-lg">
           ماژول‌های فعال هر کارخانه
         </h2>
-        {localFactories.map((f) => (
+        {tableFactories.map((f) => (
           <div
             key={f.id}
             className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
@@ -619,7 +631,7 @@ function TenantsPage() {
                   {modules
                     .filter((m) => m.id !== "core" && m.id !== "superadmin")
                     .map((mod) => {
-                      const enabled = f.enabledModules.includes(mod.id);
+                      const enabled = (f.enabledModules ?? []).includes(mod.id);
                       return (
                         <div
                           key={mod.id}
@@ -651,7 +663,7 @@ function TenantsPage() {
         ))}
       </div>
       <div className="mt-8">
-        <PageBuilderSection factoryId={expandedFactory || ""} />
+        <PageBuilderSection factoryId={expandedFactory?.toString() ?? ""} />
       </div>
     </div>
   );

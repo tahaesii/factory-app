@@ -44,6 +44,8 @@ export interface DataTableProps<T> {
   selectable?: boolean;
   actions?: boolean;
   emptyMessage?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export default function DataTable<T extends { id: number }>({
@@ -51,6 +53,7 @@ export default function DataTable<T extends { id: number }>({
   columns,
   title,
   icon,
+  searchValue,
   searchable = true,
   searchPlaceholder = "جستجو...",
   filterable = true,
@@ -63,6 +66,7 @@ export default function DataTable<T extends { id: number }>({
   onView,
   onExport,
   onImport,
+  onSearchChange,
   addLabel = "افزودن",
   selectable = false,
   actions = true,
@@ -78,8 +82,8 @@ export default function DataTable<T extends { id: number }>({
 
   const filteredData = useMemo(() => {
     let result = [...data];
-
-    if (searchQuery) {
+    const query = onSearchChange ? (searchValue ?? "") : searchQuery;
+    if (query) {
       const query = searchQuery.toLowerCase();
       result = result.filter((row) =>
         columns.some((col) => {
@@ -153,9 +157,14 @@ export default function DataTable<T extends { id: number }>({
               <div className="flex items-center bg-card rounded-xl px-3 border border-default focus-within:border-blue-500 transition-colors">
                 <Search size={14} className="text-muted" />
                 <input
-                  value={searchQuery}
+                  value={searchValue ?? searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
+                    if (onSearchChange) {
+                      onSearchChange(e.target.value);
+                    } else {
+                      setSearchQuery(e.target.value);
+                    }
+
                     setCurrentPage(1);
                   }}
                   placeholder={searchPlaceholder}
