@@ -8,7 +8,13 @@ import {
   CheckCircle2,
   Plus,
   RefreshCw,
+  Gauge,
+  Save,
+  X,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
 import DataTable, { Column } from "@/components/ui/DataTable";
@@ -36,7 +42,11 @@ import {
   Line,
 } from "recharts";
 import type { Device, PLC, Tag } from "@/types/phase2";
-import { Sensor, telemetryService } from "@/services/telemetryService";
+import {
+  Sensor,
+  SensorConfig,
+  telemetryService,
+} from "@/services/telemetryService";
 
 const API = "/api";
 
@@ -77,6 +87,8 @@ export function IDPModule() {
       return <TagsPage />;
     case "historian":
       return <HistorianPage />;
+    case "sensor-config":
+      return <SensorConfigPage />;
     case "formulas":
       return <FormulasPage />;
     case "events":
@@ -989,15 +1001,22 @@ function TagsPage() {
 
 function HistorianPage() {
   const [sensors, setSensors] = useState<Sensor[]>([]);
+  /** Map: raw sensor id → display name from config */
+  const [sensorLabelMap, setSensorLabelMap] = useState<Record<string, string>>(
+    {},
+  );
   const [selectedSensor, setSelectedSensor] = useState(
     "line02.plc01.motor-mixer.current",
   );
   const [selectedRange, setSelectedRange] = useState("-1h");
-  const [chartData, setChartData] = useState<{ time: string; value: number }[]>(
-    [],
-  );
+  const [chartData, setChartData] = useState<
+    { time: string; label: string; value: number }[]
+  >([]);
   const [selectedWindow, setSelectedWindow] = useState("5m");
   const [loading, setLoading] = useState(false);
+
+  /** Derive the display label for the currently selected sensor */
+  const selectedSensorLabel = sensorLabelMap[selectedSensor] || selectedSensor;
 
   useEffect(() => {
     loadSensors();
@@ -1008,25 +1027,31 @@ function HistorianPage() {
 
     loadReadings();
   }, [selectedSensor, selectedRange, selectedWindow]);
+
   const loadSensors = async () => {
     try {
-      const data = await telemetryService.getSensors();
+      const [sensorData, configs] = await Promise.all([
+        telemetryService.getSensors(),
+        telemetryService.getConfigs().catch(() => [] as SensorConfig[]),
+      ]);
+      setSensors(sensorData);
 
-      setSensors(data);
+      // Build a lookup: sensor_id → display name (fall back to raw id)
+      const labelMap: Record<string, string> = {};
+      for (const c of configs) {
+        if (c.name) {
+          labelMap[c.sensor_id] = c.name;
+        }
+      }
+      setSensorLabelMap(labelMap);
 
-      if (data.length > 0) {
-        setSelectedSensor(data[0].sensor);
+      if (sensorData.length > 0) {
+        setSelectedSensor(sensorData[0].sensor);
       }
     } catch (err) {
       console.error(err);
     }
   };
-
-  useEffect(() => {
-    if (!selectedSensor) return;
-
-    loadReadings();
-  }, [selectedSensor, selectedRange]);
 
   const loadReadings = async () => {
     try {
@@ -1038,17 +1063,35 @@ function HistorianPage() {
         window: selectedWindow,
       });
 
+      // Use the full ISO timestamp as x-value so every point has a unique
+      // x-coordinate (fixes activeDot alignment on multi-day ranges where
+      // HH:mm alone creates duplicate values). The tick formatter on XAxis
+      // will display short labels.
       const formatted = data.points.map((point) => ({
-        time: point.time.split("T")[1].slice(0, 5), // "14:35"
+        time: point.time, // full ISO string — unique per data point
+        label: point.time.split("T")[1].slice(0, 5), // "14:35" display label
         value: point.value,
       }));
       setChartData(formatted);
     } catch (err) {
       console.error(err);
+      // If the selected sensor fails, try skipping to the next one
+      if (sensors.length > 0) {
+        const currentIdx = sensors.findIndex(
+          (s) => s.sensor === selectedSensor,
+        );
+        const nextIdx = currentIdx + 1;
+        if (nextIdx < sensors.length) {
+          setSelectedSensor(sensors[nextIdx].sensor);
+          return;
+        }
+      }
+      setChartData([]);
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -1066,11 +1109,14 @@ function HistorianPage() {
             onChange={(e) => setSelectedSensor(e.target.value)}
             className="bg-card border border-default rounded-xl px-3 py-2 text-primary text-sm"
           >
-            {sensors.map((sensor) => (
-              <option key={sensor.sensor} value={sensor.sensor}>
-                {sensor.sensor}
-              </option>
-            ))}
+            {sensors.map((sensor) => {
+              const label = sensorLabelMap[sensor.sensor] || sensor.sensor;
+              return (
+                <option key={sensor.sensor} value={sensor.sensor}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
           <select
             value={selectedRange}
@@ -1092,34 +1138,531 @@ function HistorianPage() {
             <option value="10m">10 Minutes</option>
             <option value="15m">15 Minutes</option>
           </select>
+          {selectedSensorLabel !== selectedSensor && (
+            <span className="text-xs text-muted bg-card px-2 py-1 rounded-lg">
+              {selectedSensor}
+            </span>
+          )}
         </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="gradHist" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis dataKey="time" tick={{ fill: "#71717a", fontSize: 11 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 11 }} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#18181b",
-                border: "1px solid #27272a",
-                borderRadius: "12px",
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="#ef4444"
-              fill="url(#gradHist)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className="chart-container">
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart
+              data={chartData}
+              tabIndex={-1}
+              style={{ outline: "none" }}
+            >
+              <defs>
+                <linearGradient id="gradHist" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis
+                dataKey="time"
+                tickFormatter={(val: string) => {
+                  const d = new Date(val);
+                  // Show date for ranges > 24h, else just time
+                  const rangeMs =
+                    chartData.length > 1
+                      ? new Date(chartData[chartData.length - 1].time).getTime() -
+                        new Date(chartData[0].time).getTime()
+                      : 0;
+                  if (rangeMs > 86400000) {
+                    return d.toLocaleDateString("fa-IR", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  }
+                  return d.toLocaleTimeString("fa-IR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                }}
+                tick={{ fill: "#71717a", fontSize: 11 }}
+                interval="preserveStartEnd"
+                minTickGap={40}
+              />
+              <YAxis tick={{ fill: "#71717a", fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#18181b",
+                  border: "1px solid #27272a",
+                  borderRadius: "12px",
+                }}
+                labelFormatter={(_label: string, payload: any[]) => {
+                  const point = payload?.[0]?.payload;
+                  return point
+                    ? `${selectedSensorLabel} — ${point.label}`
+                    : selectedSensorLabel;
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#ef4444"
+                fill="url(#gradHist)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{
+                  r: 5,
+                  fill: "#ef4444",
+                  stroke: "#fff",
+                  strokeWidth: 2,
+                }}
+                isAnimationActive={false}
+                connectNulls={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
+    </div>
+  );
+}
+
+interface SensorConfigDraft {
+  name: string;
+  name_en: string;
+  unit: string;
+  description: string;
+  is_active: boolean;
+}
+
+interface MergedSensorRow {
+  /** The canonical sensor identifier (maps to sensor.sensor or sensor_id) */
+  sensorId: string;
+  /** Whether this sensor has been saved as a config on the backend */
+  hasConfig: boolean;
+  /** Server-side config id (0 if no config yet) */
+  configId: number;
+  /** Display name from config, or empty string */
+  name: string;
+  name_en: string;
+  /** Unit from config, or blank */
+  unit: string;
+  description: string;
+  is_active: boolean;
+}
+
+function SensorConfigPage() {
+  const user = useAuthStore((s) => s.user);
+  const factoryId = user?.factory ?? 1;
+
+  const [rows, setRows] = useState<MergedSensorRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [editingRow, setEditingRow] = useState<Record<string, SensorConfigDraft>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch both discovered sensors AND existing configs in parallel
+      const [sensors, configs] = await Promise.all([
+        telemetryService.getSensors(),
+        telemetryService.getConfigs(),
+      ]);
+
+      // Build a lookup: sensorId → SensorConfig
+      const configMap = new Map<string, SensorConfig>();
+      for (const c of configs) {
+        configMap.set(c.sensor_id, c);
+      }
+
+      // Merge: every discovered sensor gets a row; config info fills in if available
+      const merged: MergedSensorRow[] = sensors.map((s) => {
+        const existing = configMap.get(s.sensor);
+        return {
+          sensorId: s.sensor,
+          hasConfig: !!existing,
+          configId: existing?.id ?? 0,
+          name: existing?.name ?? "",
+          name_en: existing?.name_en ?? "",
+          unit: existing?.unit ?? "",
+          description: existing?.description ?? "",
+          is_active: existing?.is_active ?? true,
+        };
+      });
+
+      setRows(merged);
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "خطا در دریافت تنظیمات سنسورها";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const getRow = (sensorId: string): MergedSensorRow | undefined =>
+    rows.find((r) => r.sensorId === sensorId);
+
+  const startEdit = (sensorId: string) => {
+    const row = getRow(sensorId);
+    if (!row) return;
+    setEditingRow((prev) => ({
+      ...prev,
+      [sensorId]: {
+        name: row.name,
+        name_en: row.name_en,
+        unit: row.unit,
+        description: row.description,
+        is_active: row.is_active,
+      },
+    }));
+  };
+
+  const cancelEdit = (sensorId: string) => {
+    setEditingRow((prev) => {
+      const next = { ...prev };
+      delete next[sensorId];
+      return next;
+    });
+  };
+
+  const updateDraft = (sensorId: string, field: keyof SensorConfigDraft, value: any) => {
+    setEditingRow((prev) => ({
+      ...prev,
+      [sensorId]: { ...prev[sensorId], [field]: value },
+    }));
+  };
+
+  const handleSave = async (sensorId: string) => {
+    const draft = editingRow[sensorId];
+    if (!draft) return;
+
+    // Validate
+    if (!draft.name.trim()) {
+      toast.error("نام سنسور الزامی است");
+      return;
+    }
+    if (!draft.unit.trim()) {
+      toast.error("واحد اندازه‌گیری الزامی است");
+      return;
+    }
+
+    const payload = {
+      sensor_id: sensorId,
+      name: draft.name.trim(),
+      name_en: draft.name_en.trim() || draft.name.trim(),
+      unit: draft.unit.trim(),
+      description: draft.description.trim(),
+      factory: factoryId,
+      is_active: draft.is_active,
+    };
+
+    setSaving((prev) => ({ ...prev, [sensorId]: true }));
+
+    try {
+      const row = getRow(sensorId);
+      if (row?.hasConfig && row.configId > 0) {
+        // UPDATE
+        const updated = await telemetryService.updateConfig(row.configId, payload);
+        setRows((prev) =>
+          prev.map((r) =>
+            r.sensorId === sensorId
+              ? { ...r, name: updated.name, name_en: updated.name_en, unit: updated.unit, description: updated.description, is_active: updated.is_active }
+              : r,
+          ),
+        );
+        toast.success("تنظیمات سنسور با موفقیت به‌روزرسانی شد");
+      } else {
+        // CREATE
+        const created = await telemetryService.createConfig(payload);
+        setRows((prev) =>
+          prev.map((r) =>
+            r.sensorId === sensorId
+              ? {
+                  ...r,
+                  hasConfig: true,
+                  configId: created.id,
+                  name: created.name,
+                  name_en: created.name_en,
+                  unit: created.unit,
+                  description: created.description,
+                  is_active: created.is_active,
+                }
+              : r,
+          ),
+        );
+        toast.success("تنظیمات سنسور با موفقیت ایجاد شد");
+      }
+      cancelEdit(sensorId);
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        "خطا در ذخیره تنظیمات";
+      toast.error(msg);
+    } finally {
+      setSaving((prev) => ({ ...prev, [sensorId]: false }));
+    }
+  };
+
+  // ── Render ──
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-primary">تنظیمات سنسور</h1>
+            <p className="text-muted text-sm">مدیریت نام و واحد سنسورهای PLC</p>
+          </div>
+        </div>
+        <div className="bg-card border border-default rounded-2xl p-12 flex flex-col items-center justify-center gap-3">
+          <Loader2 size={32} className="animate-spin text-muted" />
+          <p className="text-muted">در حال دریافت اطلاعات سنسورها...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-primary">تنظیمات سنسور</h1>
+            <p className="text-muted text-sm">مدیریت نام و واحد سنسورهای PLC</p>
+          </div>
+          <button
+            onClick={loadConfigs}
+            className="flex items-center gap-1.5 px-4 py-2 bg-card hover:bg-zinc-700 text-primary text-sm rounded-xl transition-all"
+          >
+            <RefreshCw size={14} />
+            تلاش مجدد
+          </button>
+        </div>
+        <div className="bg-card border border-red-500/20 rounded-2xl p-8 flex flex-col items-center justify-center gap-3">
+          <AlertCircle size={40} className="text-red-400" />
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-primary">تنظیمات سنسور</h1>
+          <p className="text-muted text-sm">
+            برای هر سنسور نام و واحد اندازه‌گیری دلخواه تعیین کنید
+          </p>
+        </div>
+        <button
+          onClick={loadData}
+          className="flex items-center gap-1.5 px-3 py-2 bg-card hover:bg-zinc-700 text-primary text-sm rounded-xl transition-all"
+        >
+          <RefreshCw size={14} />
+          بروزرسانی
+        </button>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="bg-card border border-default rounded-2xl p-12 flex flex-col items-center justify-center gap-3">
+          <Gauge size={40} className="text-muted" />
+          <p className="text-muted">هیچ سنسوری یافت نشد</p>
+          <p className="text-muted text-xs">
+            پس از راه‌اندازی PLCها و تشخیص سنسورها، در این بخش نمایش داده خواهند شد
+          </p>
+        </div>
+      ) : (
+        <div className="bg-card border border-default rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-default bg-card">
+                  <th className="text-right text-xs font-medium text-muted px-4 py-3">
+                    شناسه سنسور
+                  </th>
+                  <th className="text-right text-xs font-medium text-muted px-4 py-3">
+                    نام نمایشی
+                  </th>
+                  <th className="text-right text-xs font-medium text-muted px-4 py-3">
+                    واحد
+                  </th>
+                  <th className="text-right text-xs font-medium text-muted px-4 py-3">
+                    توضیحات
+                  </th>
+                  <th className="text-right text-xs font-medium text-muted px-4 py-3">
+                    وضعیت
+                  </th>
+                  <th className="text-right text-xs font-medium text-muted px-4 py-3 w-32">
+                    عملیات
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const sid = row.sensorId;
+                  const isEditing = sid in editingRow;
+                  const draft = editingRow[sid];
+                  const isSaving = saving[sid] ?? false;
+
+                  return (
+                    <tr
+                      key={sid}
+                      className="border-b border-default hover:bg-card/50 transition-colors"
+                    >
+                      {/* Sensor ID (readonly) */}
+                      <td className="px-4 py-3">
+                        <code className="text-xs font-mono text-blue-400">
+                          {sid}
+                        </code>
+                      </td>
+
+                      {/* Name (editable) */}
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={draft.name}
+                            onChange={(e) =>
+                              updateDraft(sid, "name", e.target.value)
+                            }
+                            className="w-full bg-card border border-default rounded-lg px-3 py-1.5 text-sm text-primary placeholder:text-muted outline-none focus:border-blue-500 transition-colors"
+                            placeholder="نام فارسی"
+                            disabled={isSaving}
+                          />
+                        ) : (
+                          <span className="text-sm text-primary">
+                            {row.name || "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Unit (editable) */}
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={draft.unit}
+                            onChange={(e) =>
+                              updateDraft(sid, "unit", e.target.value)
+                            }
+                            className="w-full bg-card border border-default rounded-lg px-3 py-1.5 text-sm text-primary placeholder:text-muted outline-none focus:border-blue-500 transition-colors"
+                            placeholder="مثلاً A, °C, bar"
+                            disabled={isSaving}
+                            dir="ltr"
+                          />
+                        ) : (
+                          <span className="text-sm text-primary">
+                            {row.unit || "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Description (editable) */}
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={draft.description}
+                            onChange={(e) =>
+                              updateDraft(sid, "description", e.target.value)
+                            }
+                            className="w-full bg-card border border-default rounded-lg px-3 py-1.5 text-sm text-primary placeholder:text-muted outline-none focus:border-blue-500 transition-colors"
+                            placeholder="توضیحات (اختیاری)"
+                            disabled={isSaving}
+                          />
+                        ) : (
+                          <span className="text-sm text-muted">
+                            {row.description || "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Status (Active/Inactive — editable when editing) */}
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={draft.is_active}
+                              onChange={(e) =>
+                                updateDraft(sid, "is_active", e.target.checked)
+                              }
+                              className="w-4 h-4 rounded bg-zinc-700 border-zinc-600 text-blue-600 focus:ring-blue-500"
+                              disabled={isSaving}
+                            />
+                            <span className="text-xs text-primary">
+                              {draft.is_active ? "فعال" : "غیرفعال"}
+                            </span>
+                          </label>
+                        ) : (
+                          <span
+                            className={`px-2 py-0.5 rounded-lg text-xs font-medium ${
+                              row.is_active
+                                ? "text-green-500 bg-green-500/10"
+                                : "text-red-500 bg-red-500/10"
+                            }`}
+                          >
+                            {row.is_active ? "فعال" : "غیرفعال"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleSave(sid)}
+                              disabled={isSaving}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-all"
+                            >
+                              {isSaving ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <Save size={12} />
+                              )}
+                              ذخیره
+                            </button>
+                            <button
+                              onClick={() => cancelEdit(sid)}
+                              disabled={isSaving}
+                              className="flex items-center gap-1 px-3 py-1.5 text-muted hover:text-primary hover:bg-card rounded-lg text-xs transition-all"
+                            >
+                              <X size={12} />
+                              لغو
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => startEdit(sid)}
+                            className="flex items-center gap-1 px-3 py-1.5 text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg text-xs transition-all"
+                          >
+                            <Database size={12} />
+                            ویرایش
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Row count */}
+          <div className="p-3 border-t border-default">
+            <span className="text-xs text-muted">
+              {rows.length} سنسور
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

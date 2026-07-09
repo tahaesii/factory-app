@@ -143,6 +143,7 @@ export const modules: ModuleDef[] = [
       { id: "plcs", title: "PLCها", icon: Database },
       { id: "tags", title: "تگ‌ها", icon: Activity },
       { id: "historian", title: "تاریخچه", icon: BarChart3 },
+      { id: "sensor-config", title: "تنظیمات سنسور", icon: Gauge },
       { id: "formulas", title: "فرمول‌ها", icon: GitBranch },
       { id: "events", title: "رویدادها", icon: TriangleAlert },
     ],

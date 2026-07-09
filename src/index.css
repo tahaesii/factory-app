@@ -157,6 +157,31 @@
   color: var(--color-text-secondary);
 }
 
+/* Remove recharts focus outline */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-legend-wrapper,
+.recharts-legend-wrapper *,
+.recharts-surface,
+.recharts-surface *,
+.recharts-wrapper svg,
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-wrapper svg:focus,
+.recharts-wrapper svg:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.chart-container {
+  outline: none !important;
+}
+.chart-container:focus,
+.chart-container:focus-visible,
+.chart-container:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes bounce-s { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
