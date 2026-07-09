@@ -1062,11 +1062,6 @@ function HistorianPage() {
         start: selectedRange,
         window: selectedWindow,
       });
-
-      // Use the full ISO timestamp as x-value so every point has a unique
-      // x-coordinate (fixes activeDot alignment on multi-day ranges where
-      // HH:mm alone creates duplicate values). The tick formatter on XAxis
-      // will display short labels.
       const formatted = data.points.map((point) => ({
         time: point.time, // full ISO string — unique per data point
         label: point.time.split("T")[1].slice(0, 5), // "14:35" display label
@@ -1190,8 +1185,8 @@ function HistorianPage() {
                   border: "1px solid #27272a",
                   borderRadius: "12px",
                 }}
-                labelFormatter={(_label: string, payload: any[]) => {
-                  const point = payload?.[0]?.payload;
+                labelFormatter={(label, payload) => {
+                  const point = (payload as any[])?.[0]?.payload;
                   return point
                     ? `${selectedSensorLabel} — ${point.label}`
                     : selectedSensorLabel;
@@ -1230,16 +1225,11 @@ interface SensorConfigDraft {
 }
 
 interface MergedSensorRow {
-  /** The canonical sensor identifier (maps to sensor.sensor or sensor_id) */
   sensorId: string;
-  /** Whether this sensor has been saved as a config on the backend */
   hasConfig: boolean;
-  /** Server-side config id (0 if no config yet) */
   configId: number;
-  /** Display name from config, or empty string */
   name: string;
   name_en: string;
-  /** Unit from config, or blank */
   unit: string;
   description: string;
   is_active: boolean;
@@ -1436,7 +1426,7 @@ function SensorConfigPage() {
             <p className="text-muted text-sm">مدیریت نام و واحد سنسورهای PLC</p>
           </div>
           <button
-            onClick={loadConfigs}
+            onClick={loadData}
             className="flex items-center gap-1.5 px-4 py-2 bg-card hover:bg-zinc-700 text-primary text-sm rounded-xl transition-all"
           >
             <RefreshCw size={14} />
