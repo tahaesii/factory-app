@@ -13,6 +13,7 @@ import {
   X,
   Loader2,
   AlertCircle,
+  Bell,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAppStore } from "@/store/appStore";
@@ -42,11 +43,9 @@ import {
   Line,
 } from "recharts";
 import type { Device, PLC, Tag } from "@/types/phase2";
-import {
-  Sensor,
-  SensorConfig,
-  telemetryService,
-} from "@/services/telemetryService";
+import { telemetryService } from "@/services/telemetryService";
+import type { Sensor, SensorConfig, SensorConfigDraft, MergedSensorRow } from "@/types/phase2";
+import AlertRulesModal from "@/components/phase2/AlertRulesModal";
 
 const API = "/api";
 
@@ -1216,25 +1215,6 @@ function HistorianPage() {
   );
 }
 
-interface SensorConfigDraft {
-  name: string;
-  name_en: string;
-  unit: string;
-  description: string;
-  is_active: boolean;
-}
-
-interface MergedSensorRow {
-  sensorId: string;
-  hasConfig: boolean;
-  configId: number;
-  name: string;
-  name_en: string;
-  unit: string;
-  description: string;
-  is_active: boolean;
-}
-
 function SensorConfigPage() {
   const user = useAuthStore((s) => s.user);
   const factoryId = user?.factory ?? 1;
@@ -1245,6 +1225,9 @@ function SensorConfigPage() {
 
   const [editingRow, setEditingRow] = useState<Record<string, SensorConfigDraft>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+
+  // Alert Rules Modal state
+  const [alertModalSensor, setAlertModalSensor] = useState<MergedSensorRow | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -1629,13 +1612,31 @@ function SensorConfigPage() {
                             </button>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => startEdit(sid)}
-                            className="flex items-center gap-1 px-3 py-1.5 text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg text-xs transition-all"
-                          >
-                            <Database size={12} />
-                            ویرایش
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => startEdit(sid)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg text-xs transition-all"
+                            >
+                              <Database size={12} />
+                              ویرایش
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Validate: name and unit must be configured
+                                if (!row.name.trim() || !row.unit.trim()) {
+                                  toast.error(
+                                    "لطفا ابتدا نام و واحد سنسور را در بخش ویرایش تنظیم کنید",
+                                  );
+                                  return;
+                                }
+                                setAlertModalSensor(row);
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg text-xs transition-all"
+                            >
+                              <Bell size={12} />
+                              اعلان
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -1652,6 +1653,17 @@ function SensorConfigPage() {
             </span>
           </div>
         </div>
+      )}
+
+      {/* Alert Rules Modal */}
+      {alertModalSensor && (
+        <AlertRulesModal
+          isOpen={!!alertModalSensor}
+          onClose={() => setAlertModalSensor(null)}
+          sensorId={alertModalSensor.sensorId}
+          sensorName={alertModalSensor.name}
+          sensorUnit={alertModalSensor.unit}
+        />
       )}
     </div>
   );

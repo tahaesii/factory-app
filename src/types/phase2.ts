@@ -473,3 +473,99 @@ export interface ExecutiveReport {
   status: 'draft' | 'sent' | 'approved';
   sections: string[];
 }
+
+// ==========================================
+// TELEMETRY — SENSORS & ALERT RULES
+// ==========================================
+
+/** Raw sensor reading — returned by GET /api/telemetry/sensors/ */
+export interface Sensor {
+  sensor: string;
+  source: string;
+  unit: string;
+  last_value: number;
+  last_time: string;
+}
+
+export interface ReadingPoint {
+  time: string;
+  value: number;
+}
+
+export interface SensorReadings {
+  sensor: string;
+  unit: string;
+  points: ReadingPoint[];
+}
+
+/** Sensor configuration — returned by GET /api/telemetry/config/ */
+export interface SensorConfig {
+  id: number;
+  sensor_id: string;
+  sensor?: string;
+  name: string;
+  name_en: string;
+  unit: string;
+  description: string;
+  factory: number;
+  is_active: boolean;
+}
+
+/** Payload for creating / updating a sensor config */
+export interface SensorConfigPayload {
+  sensor_id: string;
+  name: string;
+  name_en: string;
+  unit: string;
+  description: string;
+  factory: number;
+  is_active: boolean;
+}
+
+/** Inline-editing draft for sensor config (no id needed) */
+export interface SensorConfigDraft {
+  name: string;
+  name_en: string;
+  unit: string;
+  description: string;
+  is_active: boolean;
+}
+
+/** Merged sensor row combining discovered sensor + config data */
+export interface MergedSensorRow {
+  sensorId: string;
+  hasConfig: boolean;
+  configId: number;
+  name: string;
+  name_en: string;
+  unit: string;
+  description: string;
+  is_active: boolean;
+}
+
+/** Alert rule — returned by GET /api/telemetry/alert-rules/ */
+export interface AlertRule {
+  id: number;
+  sensor_id: string;
+  name: string;
+  min_value: number;
+  max_value: number;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  factory: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Payload for creating / updating an alert rule */
+export interface AlertRulePayload {
+  sensor_id: string;
+  name: string;
+  min_value: number;
+  max_value: number;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  factory: number;
+  is_active: boolean;
+}

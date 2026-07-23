@@ -1,67 +1,43 @@
 import { api } from "./api";
+import type {
+  Sensor,
+  SensorConfig,
+  SensorConfigPayload,
+  AlertRule,
+  AlertRulePayload,
+} from "@/types/phase2";
 
-export interface Sensor {
-  sensor: string;
-  source: string;
-  unit: string;
-  last_value: number;
-  last_time: string;
-}
-
-export interface ReadingPoint {
-  time: string;
-  value: number;
-}
-
-export interface SensorReadings {
-  sensor: string;
-  unit: string;
-  points: ReadingPoint[];
-}
-
-/** Sensor configuration — returned by GET /api/telemetry/config/ */
-export interface SensorConfig {
-  id: number;
-  sensor_id: string;
-  sensor?: string;
-  name: string;
-  name_en: string;
-  unit: string;
-  description: string;
-  factory: number;
-  is_active: boolean;
-}
-
-/** Payload for creating / updating a sensor config */
-export interface SensorConfigPayload {
-  sensor_id: string;
-  name: string;
-  name_en: string;
-  unit: string;
-  description: string;
-  factory: number;
-  is_active: boolean;
-}
+export type {
+  Sensor,
+  SensorConfig,
+  SensorConfigPayload,
+  AlertRule,
+  AlertRulePayload,
+};
 
 export const telemetryService = {
+  // ── Live sensors ──
   async getSensors() {
     const { data } = await api.get<Sensor[]>("/api/telemetry/sensors/");
     return data;
   },
 
+  // ── Readings / Historian ──
   async getReadings(params: {
     sensor: string;
     start?: string;
     stop?: string;
     window?: string;
   }) {
-    const { data } = await api.get<SensorReadings>("/api/telemetry/readings/", {
-      params,
-    });
-
+    const { data } = await api.get<{
+      sensor: string;
+      unit: string;
+      points: { time: string; value: number }[];
+    }>("/api/telemetry/readings/", { params });
     return data;
   },
 
+  // ── Sensor configs ──
   async getConfigs() {
     const { data } = await api.get<SensorConfig[]>("/api/telemetry/config/");
     return data.map((item) => ({
@@ -84,5 +60,34 @@ export const telemetryService = {
       payload,
     );
     return data;
+  },
+
+  // ── Alert rules ──
+  async getAlertRules(sensorId?: string) {
+    const params = sensorId ? { sensor_id: sensorId } : undefined;
+    const { data } = await api.get<AlertRule[]>("/api/telemetry/alert-rules/", {
+      params,
+    });
+    return data;
+  },
+
+  async createAlertRule(payload: AlertRulePayload) {
+    const { data } = await api.post<AlertRule>(
+      "/api/telemetry/alert-rules/",
+      payload,
+    );
+    return data;
+  },
+
+  async updateAlertRule(id: number, payload: AlertRulePayload) {
+    const { data } = await api.put<AlertRule>(
+      `/api/telemetry/alert-rules/${id}/`,
+      payload,
+    );
+    return data;
+  },
+
+  async deleteAlertRule(id: number) {
+    await api.delete(`/api/telemetry/alert-rules/${id}/`);
   },
 };
