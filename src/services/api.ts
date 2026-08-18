@@ -1,20 +1,26 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
+import { useApiConfigStore } from "@/store/apiConfigStore";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  
 });
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
+  const configuredBaseUrl = useApiConfigStore.getState().sensorAlertApiBaseUrl;
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  /* Override baseURL with the user-configured value (defaults to VITE_API_URL) */
+  if (configuredBaseUrl) {
+    config.baseURL = configuredBaseUrl;
   }
 
   return config;

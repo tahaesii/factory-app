@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import {
   Shield,
   GitBranch,
@@ -13,6 +13,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronLeft,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
@@ -833,6 +835,11 @@ function LicensesPage() {
   );
 }
 
+import toast from "react-hot-toast";
+import { useApiConfigStore, deriveWsUrl } from "@/store/apiConfigStore";
+import { telemetryService } from "@/services/telemetryService";
+import { SENSOR_ALERT_ENDPOINTS } from "@/services/sensorAlertEndpoints";
+
 function IntegrationsPage() {
   const integrations = [
     { name: "OPC-UA Server", status: "متصل", type: "صنعتی", icon: "🔌" },
@@ -845,16 +852,229 @@ function IntegrationsPage() {
     { name: "Active Directory", status: "غیرفعال", type: "SSO", icon: "🔐" },
   ];
 
+  // ── Sensor Alert API configuration state ──
+  const {
+    sensorAlertApiBaseUrl,
+    sensorAlertWebSocketUrl,
+    wsConnectionStatus,
+    saveConfiguration,
+  } = useApiConfigStore();
+
+  const [restUrlInput, setRestUrlInput] = useState(sensorAlertApiBaseUrl);
+  const [wsUrlInput, setWsUrlInput] = useState(sensorAlertWebSocketUrl);
+  const [showSensorCard, setShowSensorCard] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    try {
+      await telemetryService.getAlertEvents();
+      toast.success("اتصال به Sensor Alert API موفقیت‌آمیز بود");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        "خطا در اتصال به Sensor Alert API";
+      toast.error(msg);
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleSave = () => {
+    const trimmedRest = restUrlInput.trim();
+    const trimmedWs = wsUrlInput.trim();
+    saveConfiguration(trimmedRest, trimmedWs);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleRestUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newUrl = e.target.value;
+    setRestUrlInput(newUrl);
+    // Auto-derive WebSocket URL from REST URL
+    setWsUrlInput(deriveWsUrl(newUrl));
+  };
+
+  const resetToDefault = () => {
+    const defaultUrl =
+      import.meta.env.VITE_API_URL || "http://87.107.146.212:8000";
+    setRestUrlInput(defaultUrl);
+    setWsUrlInput(deriveWsUrl(defaultUrl));
+  };
+
+  const wsStatusColor =
+    wsConnectionStatus === "connected"
+      ? "text-green-500"
+      : wsConnectionStatus === "connecting"
+      ? "text-amber-500"
+      : "text-zinc-500";
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <GitBranch size={20} className="text-blue-500" /> یکپارچه‌سازی‌ها
         </h2>
-        <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-all">
-          <Plus size={16} /> افزودن اتصال
+        <button
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-all"
+          onClick={() => setShowSensorCard((v) => !v)}
+        >
+          <Plus size={16} />
+          {showSensorCard ? "بستن کارت" : "پیکربندی API"}
         </button>
       </div>
+
+      {/* ── Dedicated Sensor Alert API configuration card ── */}
+      <div className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl overflow-hidden transition-all">
+        <div
+          className="flex items-center justify-between p-4 cursor-pointer"
+          onClick={() => setShowSensorCard((v) => !v)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">⚡</div>
+            <div>
+              <h3 className="text-white font-bold text-sm">
+                Sensor Alert API
+              </h3>
+              <p className="text-xs text-zinc-500">
+                API هشدارهای سنسور — REST + WebSocket
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className={`text-xs font-medium ${wsStatusColor}`}
+            >
+              {wsConnectionStatus === "connected"
+                ? "● متصل"
+                : wsConnectionStatus === "connecting"
+                ? "● در حال اتصال"
+                : "○ قطع"}
+            </span>
+            <ChevronDown
+              size={16}
+              className={`text-zinc-500 transition-transform ${
+                showSensorCard ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+        </div>
+
+        {showSensorCard && (
+          <div className="px-4 pb-4 border-t border-zinc-800 space-y-4">
+            {/* REST API URL */}
+            <div>
+              <label className="block text-zinc-400 text-sm mb-2">
+                REST API Base URL
+              </label>
+              <input
+                type="url"
+                value={restUrlInput}
+                onChange={handleRestUrlChange}
+                placeholder="http://host:port"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all font-mono text-sm"
+                dir="ltr"
+              />
+              <p className="text-xs text-zinc-500 mt-1">
+                آدرس پایه API برای درخواست‌های REST
+              </p>
+            </div>
+
+            {/* WebSocket URL */}
+            <div>
+              <label className="block text-zinc-400 text-sm mb-2">
+                WebSocket URL
+              </label>
+              <input
+                type="url"
+                value={wsUrlInput}
+                onChange={(e) => setWsUrlInput(e.target.value)}
+                placeholder="ws://host:port/ws/telemetry/alerts/"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none transition-all font-mono text-sm"
+                dir="ltr"
+              />
+              <p className="text-xs text-zinc-500 mt-1">
+                URL درون‌برنامه‌ریزی شده به‌صورت خودکار از REST URL
+              </p>
+            </div>
+
+            {/* Read-only endpoint paths */}
+            <div>
+              <h4 className="text-xs text-zinc-500 mb-2">
+                مسیرهای Endpoints (فقط خواندنی)
+              </h4>
+              <div className="space-y-1">
+                <div className="flex justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+                  <span className="text-xs text-zinc-400">Alert Rules:</span>
+                  <span
+                    className="text-xs text-zinc-300 font-mono"
+                    dir="ltr"
+                  >
+                    {SENSOR_ALERT_ENDPOINTS.ALERT_RULES}
+                  </span>
+                </div>
+                <div className="flex justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+                  <span className="text-xs text-zinc-400">Alert Events:</span>
+                  <span
+                    className="text-xs text-zinc-300 font-mono"
+                    dir="ltr"
+                  >
+                    {SENSOR_ALERT_ENDPOINTS.ALERT_EVENTS}
+                  </span>
+                </div>
+                <div className="flex justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+                  <span className="text-xs text-zinc-400">WebSocket:</span>
+                  <span
+                    className="text-xs text-zinc-300 font-mono"
+                    dir="ltr"
+                  >
+                    {SENSOR_ALERT_ENDPOINTS.WEBSOCKET}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={handleTestConnection}
+                disabled={testing}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white rounded-xl text-sm transition-all disabled:opacity-50"
+              >
+                {testing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Activity size={14} />
+                )}
+                {testing ? "در حال تست..." : "تست اتصال"}
+              </button>
+
+              <button
+                onClick={handleSave}
+                disabled={testing}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white rounded-xl text-sm transition-all disabled:opacity-50"
+              >
+                {saved ? <CheckCircle2 size={14} /> : <Save size={14} />}
+                {saved ? "ذخیره شد!" : "ذخیره"}
+              </button>
+
+              <button
+                onClick={resetToDefault}
+                disabled={testing}
+                className="flex items-center gap-2 px-4 py-2 text-zinc-500 hover:text-zinc-300 rounded-xl text-sm transition-all"
+              >
+                <RefreshCw size={14} />
+                بازنشانی به پیش‌فرض
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Existing integrations grid ── */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         {integrations.map((int) => (
           <div
@@ -868,7 +1088,11 @@ function IntegrationsPage() {
             </span>
             <div className="mt-3 pt-3 border-t border-zinc-800">
               <span
-                className={`text-xs font-medium ${int.status === "متصل" ? "text-green-500" : "text-zinc-500"}`}
+                className={`text-xs font-medium ${
+                  int.status === "متصل"
+                    ? "text-green-500"
+                    : "text-zinc-500"
+                }`}
               >
                 {int.status === "متصل" ? "● " : "○ "}
                 {int.status}

@@ -58,8 +58,8 @@ function draftKey(d: AlertRuleDraft): string {
 function fromServerRule(r: AlertRule): AlertRuleDraft {
   const d: AlertRuleDraft = {
     id: r.id,
-    min_value: String(r.min_value),
-    max_value: String(r.max_value),
+    min_value: r.min_value !== null && r.min_value !== undefined ? String(r.min_value) : "",
+    max_value: r.max_value !== null && r.max_value !== undefined ? String(r.max_value) : "",
     severity: r.severity,
     message: r.message,
     is_active: r.is_active,
@@ -170,21 +170,27 @@ export default function AlertRulesModal({
   const validateRules = (): boolean => {
     for (let i = 0; i < rules.length; i++) {
       const r = rules[i];
-      if (!r.min_value && r.min_value !== "0") {
-        toast.error(`حداقل مقدار برای قانون ${i + 1} وارد نشده است`);
+      const hasMin = r.min_value !== "" && r.min_value !== undefined && r.min_value !== null;
+      const hasMax = r.max_value !== "" && r.max_value !== undefined && r.max_value !== null;
+
+      if (!hasMin && !hasMax) {
+        toast.error(`حداقل یا حداکثر مقدار برای قانون ${i + 1} باید وارد شود`);
         return false;
       }
-      if (!r.max_value && r.max_value !== "0") {
-        toast.error(`حداکثر مقدار برای قانون ${i + 1} وارد نشده است`);
+
+      const min = hasMin ? Number(r.min_value) : null;
+      const max = hasMax ? Number(r.max_value) : null;
+
+      if (min !== null && isNaN(min)) {
+        toast.error(`مقدار حداقل قانون ${i + 1} باید عددی باشد`);
         return false;
       }
-      const min = Number(r.min_value);
-      const max = Number(r.max_value);
-      if (isNaN(min) || isNaN(max)) {
-        toast.error(`مقادیر قانون ${i + 1} باید عددی باشند`);
+      if (max !== null && isNaN(max)) {
+        toast.error(`مقدار حداکثر قانون ${i + 1} باید عددی باشد`);
         return false;
       }
-      if (min >= max) {
+
+      if (min !== null && max !== null && min >= max) {
         toast.error(`در قانون ${i + 1} حداقل باید کوچکتر از حداکثر باشد`);
         return false;
       }
@@ -196,13 +202,13 @@ export default function AlertRulesModal({
 
   const toPayload = (r: AlertRuleDraft): AlertRulePayload => ({
     sensor_id: sensorId,
-    name: `${sensorName || sensorId} — ${r.min_value}–${r.max_value} ${sensorUnit || ""}`,
-    min_value: Number(r.min_value),
-    max_value: Number(r.max_value),
+    name: `${sensorName || sensorId} — ${r.min_value || "-"}–${r.max_value || "-"} ${sensorUnit || ""}`,
+    min_value: r.min_value !== "" ? Number(r.min_value) : null,
+    max_value: r.max_value !== "" ? Number(r.max_value) : null,
     severity: r.severity,
     message:
       r.message.trim() ||
-      `مقدار سنسور بین ${r.min_value} و ${r.max_value} ${sensorUnit || ""}`,
+      `مقدار سنسور بین ${r.min_value || "—"} و ${r.max_value || "—"} ${sensorUnit || ""}`,
     factory: factoryId,
     is_active: r.is_active,
   });
@@ -395,7 +401,7 @@ export default function AlertRulesModal({
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs text-[var(--color-text-muted)] mb-1">
-                        حداقل مقدار <span className="text-red-500">*</span>
+                        حداقل مقدار <span className="text-xs text-[var(--color-text-muted)]">(اختیاری)</span>
                       </label>
                       <input
                         type="number"
@@ -411,7 +417,7 @@ export default function AlertRulesModal({
                     </div>
                     <div>
                       <label className="block text-xs text-[var(--color-text-muted)] mb-1">
-                        حداکثر مقدار <span className="text-red-500">*</span>
+                        حداکثر مقدار <span className="text-xs text-[var(--color-text-muted)]">(اختیاری)</span>
                       </label>
                       <input
                         type="number"

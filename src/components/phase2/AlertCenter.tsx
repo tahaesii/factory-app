@@ -1,12 +1,16 @@
-import { useState } from 'react';
-import { Bell, TriangleAlert, CheckCircle2, XCircle, Clock, Zap, Phone, Mail, MessageSquare, BarChart3, TrendingUp, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, TriangleAlert, CheckCircle2, XCircle, Clock, Zap, Phone, Mail, MessageSquare, BarChart3, TrendingUp, Activity, Eye, RefreshCw, Loader2, X, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppStore } from '@/store/appStore';
+import { useApiConfigStore } from '@/store/apiConfigStore';
+import { telemetryService } from '@/services/telemetryService';
+import { sensorAlertWebSocket } from '@/services/sensorAlertWebSocket';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import StatCard, { StatGrid } from '@/components/ui/StatCard';
 import FormModal, { FormField } from '@/components/ui/FormModal';
 import { alerts, alertTemplates, escalationRules, phase2ChartData } from '@/data/phase2Data';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { Alert, AlertTemplate } from '@/types/phase2';
+import type { AlertTemplate, SensorAlertEvent } from '@/types/phase2';
 
 const severityConfig: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   info:      { label: 'اطلاعاتی', color: '#6b7280', bg: 'bg-card/10 text-muted', icon: Activity },
@@ -158,25 +162,200 @@ function AlertDashboard() {
   );
 }
 
+/* ⚠️ TEMPORARY DEMO — remove when backend is live */
+const DEMO_MODE = true;
+
+const DEMO_ACTIVE_EVENTS: SensorAlertEvent[] = [
+  {
+    id: 42, rule: 3, name_rule: "دما — حد اکثر 80°C", sensor_id: "temp_01",
+    value: 85.3, severity: "critical", message: "دما از حداکثر مقدار (80) عبور کرده است",
+    triggered_at: "1403/06/15 14:32:08", resolved_at: null, resolved_value: null,
+    resolved_note: null, is_active: true, operator_note: null, is_reviewed: false,
+    reviewed_by: null, reviewed_by_name: null, reviewed_at: null,
+  },
+  {
+    id: 43, rule: 5, name_rule: "فشار — حداقل 1.5 bar", sensor_id: "pressure_03",
+    value: 1.2, severity: "warning", message: "فشار زیر حداقل مقدار (1.5) است",
+    triggered_at: "1403/06/15 14:30:45", resolved_at: null, resolved_value: null,
+    resolved_note: null, is_active: true, operator_note: null, is_reviewed: true,
+    reviewed_by: "1", reviewed_by_name: "علی احمدی", reviewed_at: "1403/06/15 14:31:00",
+  },
+];
+
+/* ⚠️ TEMPORARY DEMO — remove when backend is live */
+const DEMO_HISTORY_EVENTS: SensorAlertEvent[] = [
+  {
+    id: 42, rule: 3, name_rule: "دما — حد اکثر 80°C", sensor_id: "temp_01",
+    value: 85.3, severity: "critical", message: "دما از حداکثر مقدار (80) عبور کرده است",
+    triggered_at: "1403/06/15 14:32:08", resolved_at: "1403/06/15 15:10:30",
+    resolved_value: 72.1, resolved_note: "سیستم خنک‌کننده فعال شد",
+    is_active: false, operator_note: "بررسی شد — دما ثابت شد", is_reviewed: true,
+    reviewed_by: "1", reviewed_by_name: "علی احمدی", reviewed_at: "1403/06/15 14:45:00",
+  },
+  ...DEMO_ACTIVE_EVENTS,
+  {
+    id: 44, rule: 7, name_rule: "سرعت — حداکثر 3000 RPM", sensor_id: "speed_02",
+    value: 3200, severity: "critical", message: "سرعت موتور از حداکثر (3000) عبور کرده است",
+    triggered_at: "1403/06/15 12:15:00", resolved_at: "1403/06/15 12:25:00",
+    resolved_value: 2800, resolved_note: "دستیار هشدار داد — سرعت نرمال شد",
+    is_active: false, operator_note: "", is_reviewed: false,
+    reviewed_by: null, reviewed_by_name: null, reviewed_at: null,
+  },
+];
+
 function ActiveAlertsPage() {
-  const columns: Column<Alert>[] = [
-    { key: 'code', title: 'کد', render: (v) => <span className="font-mono text-blue-400">{v}</span> },
-    { key: 'title', title: 'عنوان' },
-    { key: 'severity', title: 'شدت', render: (v) => {
-      const s = severityConfig[v];
-      return <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${s.bg}`}>{s.label}</span>;
-    }},
-    { key: 'source', title: 'منبع', render: (v) => <span className="text-xs bg-card px-2 py-0.5 rounded">{v}</span> },
-    { key: 'departmentName', title: 'واحد' },
-    { key: 'openedAt', title: 'زمان باز شدن' },
-    { key: 'escalationLevel', title: 'سطح اسکالیشن', render: (v) => v > 0 ? <span className="text-purple-400">L{v}</span> : '-' },
-    { key: 'status', title: 'وضعیت', render: (v) => <span className={`px-2 py-0.5 rounded-lg text-xs ${statusConfig[v]?.bg}`}>{statusConfig[v]?.label}</span> },
+  const [events, setEvents] = useState<SensorAlertEvent[]>(
+    DEMO_MODE ? DEMO_ACTIVE_EVENTS : [],
+  );
+  const [loading, setLoading] = useState(false);
+  const [detailEvent, setDetailEvent] = useState<SensorAlertEvent | null>(null);
+  const wsStatus = useApiConfigStore((s) => s.wsConnectionStatus);
+  const wsStatusColor = wsStatus === "connected" ? "text-green-500" : wsStatus === "connecting" ? "text-amber-500" : "text-zinc-500";
+
+  const fetchActiveEvents = async (showSpinner = true) => {
+    if (DEMO_MODE) return; // Skip API call in demo mode
+    if (showSpinner) setLoading(true);
+    try {
+      const data = await telemetryService.getAlertEvents({ only_active: true });
+      setEvents(data);
+    } catch (err: any) {
+      // Keep existing events on error
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveEvents(false);
+    if (!DEMO_MODE) sensorAlertWebSocket.connect();
+
+    const unsubscribe = sensorAlertWebSocket.subscribe((payload) => {
+      const event = payload.data as SensorAlertEvent;
+      if (payload.type === "triggered") {
+        setEvents((prev) => [event, ...prev]);
+      } else if (payload.type === "resolved") {
+        setEvents((prev) => prev.filter((e) => e.id !== event.id));
+      } else if (payload.type === "reviewed") {
+        setEvents((prev) =>
+          prev.map((e) =>
+            e.id === event.id
+              ? { ...e, is_reviewed: event.is_reviewed, operator_note: event.operator_note, reviewed_at: event.reviewed_at, reviewed_by_name: event.reviewed_by_name }
+              : e,
+          ),
+        );
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const columns: Column<SensorAlertEvent>[] = [
+    {
+      key: "id",
+      title: "کد",
+      render: (v) => <span className="font-mono text-blue-400">#{v}</span>,
+    },
+    {
+      key: "name_rule",
+      title: "قانون هشدار",
+      render: (v) => <span className="text-primary">{v}</span>,
+    },
+    {
+      key: "sensor_id",
+      title: "سنسور",
+      render: (v) => <span className="font-mono text-xs text-muted">{v}</span>,
+    },
+    {
+      key: "value",
+      title: "مقدار",
+      render: (v) => <span className="text-primary font-mono">{v}</span>,
+    },
+    {
+      key: "severity",
+      title: "شدت",
+      render: (v) => {
+        const s = severityConfig[v];
+        return (
+          <span
+            className={`px-2 py-0.5 rounded-lg text-xs font-medium ${s.bg}`}
+          >
+            {s.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "message",
+      title: "پیام",
+    },
+    {
+      key: "triggered_at",
+      title: "زمان باز شدن",
+      render: (v) => <span className="text-muted text-xs">{v}</span>,
+    },
+    {
+      key: "is_reviewed",
+      title: "بررسی",
+      render: (v) =>
+        v ? (
+          <CheckCircle2 size={14} className="text-green-500 mx-auto" />
+        ) : (
+          <XCircle size={14} className="text-zinc-600 mx-auto" />
+        ),
+    },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <DataTable data={alerts} columns={columns} title="هشدارهای فعال"
-        icon={<Bell size={18} className="text-red-500" />} actions={false} />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-primary">
+            هشدارهای فعال سنسور
+          </h1>
+          <span className={`text-xs font-medium ${wsStatusColor}`}>
+            {wsStatus === "connected"
+              ? "● لحظه‌ای متصل"
+              : wsStatus === "connecting"
+              ? "● در حال اتصال..."
+              : "○ قطع"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchActiveEvents(true)}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white rounded-xl text-sm transition-all disabled:opacity-50"
+            title="بروزرسانی"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            بروزرسانی
+          </button>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={28} className="animate-spin text-muted" />
+        </div>
+      )}
+
+      {!loading && (
+        <DataTable
+          data={events}
+          columns={columns}
+          onView={(row) => setDetailEvent(row)}
+          emptyMessage="هیچ هشدار فعالی وجود ندارد"
+        />
+      )}
+
+      {detailEvent && (
+        <SensorAlertEventDetailModal
+          event={detailEvent}
+          onClose={() => setDetailEvent(null)}
+        />
+      )}
     </div>
   );
 }
@@ -281,33 +460,294 @@ function EscalationPage() {
 }
 
 function AlertHistoryPage() {
+  const [events, setEvents] = useState<SensorAlertEvent[]>(
+    DEMO_MODE ? DEMO_HISTORY_EVENTS : [],
+  );
+  const [loading, setLoading] = useState(false);
+  const [detailEvent, setDetailEvent] = useState<SensorAlertEvent | null>(null);
+
+  const fetchAllEvents = async (showSpinner = true) => {
+    if (DEMO_MODE) return; // Skip API call in demo mode
+    if (showSpinner) setLoading(true);
+    try {
+      const data = await telemetryService.getAlertEvents();
+      setEvents(data);
+    } catch (err: any) {
+      // Keep existing events on error
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllEvents(false);
+  }, []);
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold text-primary">تاریخچه هشدارها</h1>
-      <div className="bg-card border-default rounded-2xl overflow-hidden">
-        <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
-          {alerts.map((alert) => {
-            const sev = severityConfig[alert.severity];
-            return (
-              <div key={alert.id} className="px-4 py-3 hover:bg-card/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sev.color }} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary font-medium">{alert.title}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${sev.bg}`}>{sev.label}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] ${statusConfig[alert.status]?.bg}`}>{statusConfig[alert.status]?.label}</span>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-primary">تاریخچه هشدارهای سنسور</h1>
+        <button
+          onClick={() => fetchAllEvents(true)}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 border border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white rounded-xl text-sm transition-all disabled:opacity-50"
+          title="بروزرسانی"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          بروزرسانی
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={28} className="animate-spin text-muted" />
+        </div>
+      )}
+
+      {!loading && (
+        <div className="bg-card border border-default rounded-2xl overflow-hidden">
+          <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+            {events.map((event) => {
+              const sev = severityConfig[event.severity];
+              return (
+                <div key={event.id} className="px-4 py-3 hover:bg-card/30 cursor-pointer" onClick={() => setDetailEvent(event)}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sev.color }} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-primary font-medium">{event.name_rule}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${sev.bg}`}>{sev.label}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] ${
+                            event.is_active
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-green-500/10 text-green-500"
+                          }`}
+                        >
+                          {event.is_active ? "فعال" : "حل شده"}
+                        </span>
+                        {event.is_reviewed ? (
+                          <CheckCircle2 size={12} className="text-green-500" />
+                        ) : (
+                          <XCircle size={12} className="text-zinc-600" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted mt-0.5">
+                        <span>سنسور: {event.sensor_id}</span>
+                        <span>مقدار: {event.value}</span>
+                        <span>باز: {event.triggered_at}</span>
+                        {event.resolved_at && <span>حل: {event.resolved_at}</span>}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted mt-0.5">
-                      <span>باز: {alert.openedAt}</span>
-                      {alert.resolvedAt && <span>حل: {alert.resolvedAt}</span>}
-                      {alert.duration && <span>مدت: {alert.duration} دقیقه</span>}
-                    </div>
+                    <Eye size={14} className="text-muted" />
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {detailEvent && (
+        <SensorAlertEventDetailModal
+          event={detailEvent}
+          onClose={() => setDetailEvent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SensorAlertEventDetailModal({
+  event,
+  onClose,
+}: {
+  event: SensorAlertEvent;
+  onClose: () => void;
+}) {
+  const [operatorNote, setOperatorNote] = useState(event.operator_note ?? "");
+  const [isReviewed, setIsReviewed] = useState(event.is_reviewed ?? false);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await telemetryService.updateAlertEvent(event.id, {
+        operator_note: operatorNote,
+        is_reviewed: isReviewed,
+      });
+      toast.success("نظرات اپراتوری ذخیره شد");
+      onClose();
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        err?.message ||
+        "خطا در ذخیره نظرات";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sev = severityConfig[event.severity];
+  const SevIcon = sev.icon;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className="relative bg-card border border-default rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-default">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-xl ${sev.bg}`}
+            >
+              <SevIcon size={18} style={{ color: sev.color }} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-primary">
+                جزئیات هشدار سنسور #{event.id}
+              </h3>
+              <p className="text-xs text-muted">
+                {sev.label} • {event.name_rule}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-muted hover:text-primary hover:bg-card rounded-lg transition-all"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4 overflow-y-auto max-h-[calc(90vh-10rem)] space-y-4">
+          {/* Event Details */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-muted text-xs">قانون هشدار</span>
+              <p className="text-primary font-medium mt-0.5">
+                {event.name_rule}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted text-xs">شناسه قانون</span>
+              <p className="text-primary font-medium mt-0.5">{event.rule}</p>
+            </div>
+            <div>
+              <span className="text-muted text-xs">سنسور</span>
+              <p className="text-primary font-mono text-xs mt-0.5">
+                {event.sensor_id}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted text-xs">مقدار</span>
+              <p className="text-primary font-mono mt-0.5">{event.value}</p>
+            </div>
+            <div>
+              <span className="text-muted text-xs">زمان باز شدن</span>
+              <p className="text-primary mt-0.5 text-xs">
+                {event.triggered_at}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted text-xs">زمان حل</span>
+              <p className="text-primary mt-0.5 text-xs">
+                {event.resolved_at ?? "—"}
+              </p>
+            </div>
+            {event.resolved_value !== null && (
+              <div>
+                <span className="text-muted text-xs">مقدار حل</span>
+                <p className="text-primary font-mono mt-0.5">
+                  {event.resolved_value}
+                </p>
               </div>
-            );
-          })}
+            )}
+            {event.resolved_note && (
+              <div className="col-span-2">
+                <span className="text-muted text-xs">یادداشت حل</span>
+                <p className="text-primary mt-0.5">{event.resolved_note}</p>
+              </div>
+            )}
+            <div className="col-span-2">
+              <span className="text-muted text-xs">پیام هشدار</span>
+              <p className="text-primary mt-0.5">{event.message}</p>
+            </div>
+          </div>
+
+          {/* Review Section */}
+          <div className="border-t border-default pt-4 space-y-4">
+            <h4 className="text-sm font-bold text-primary">
+              بررسی توسط اپراتور
+            </h4>
+
+            <div>
+              <label className="block text-xs text-muted mb-1">
+                یادداشت اپراتور
+              </label>
+              <textarea
+                value={operatorNote}
+                onChange={(e) => setOperatorNote(e.target.value)}
+                placeholder="یادداشت خود را وارد کنید..."
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:border-blue-500 transition-all"
+                rows={3}
+                disabled={saving}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isReviewed}
+                  onChange={(e) => setIsReviewed(e.target.checked)}
+                  className="w-4 h-4 rounded bg-zinc-700 border-zinc-600 text-blue-600 focus:ring-blue-500"
+                  disabled={saving}
+                />
+                <span className="text-sm text-primary">
+                  بررسی شده / تأیید شده
+                </span>
+              </label>
+              {event.reviewed_by_name && (
+                <span className="text-xs text-muted">
+                  ({event.reviewed_by_name}
+                  {event.reviewed_at && ` در ${event.reviewed_at}`})
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-default">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="px-4 py-2 text-muted hover:text-primary hover:bg-card rounded-xl transition-all text-sm"
+          >
+            انصراف
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all text-sm"
+          >
+            {saving ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Save size={16} />
+            )}
+            ذخیره
+          </button>
         </div>
       </div>
     </div>

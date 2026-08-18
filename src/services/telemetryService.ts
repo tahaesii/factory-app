@@ -1,10 +1,14 @@
 import { api } from "./api";
+import { SENSOR_ALERT_ENDPOINTS, alertEventPath } from "./sensorAlertEndpoints";
 import type {
   Sensor,
   SensorConfig,
   SensorConfigPayload,
   AlertRule,
   AlertRulePayload,
+  SensorAlertEvent,
+  SensorAlertEventPayload,
+  AlertEventQueryParams,
 } from "@/types/phase2";
 
 export type {
@@ -13,6 +17,9 @@ export type {
   SensorConfigPayload,
   AlertRule,
   AlertRulePayload,
+  SensorAlertEvent,
+  SensorAlertEventPayload,
+  AlertEventQueryParams,
 };
 
 export const telemetryService = {
@@ -65,7 +72,7 @@ export const telemetryService = {
   // ── Alert rules ──
   async getAlertRules(sensorId?: string) {
     const params = sensorId ? { sensor_id: sensorId } : undefined;
-    const { data } = await api.get<AlertRule[]>("/api/telemetry/alert-rules/", {
+    const { data } = await api.get<AlertRule[]>(SENSOR_ALERT_ENDPOINTS.ALERT_RULES, {
       params,
     });
     return data;
@@ -73,7 +80,7 @@ export const telemetryService = {
 
   async createAlertRule(payload: AlertRulePayload) {
     const { data } = await api.post<AlertRule>(
-      "/api/telemetry/alert-rules/",
+      SENSOR_ALERT_ENDPOINTS.ALERT_RULES,
       payload,
     );
     return data;
@@ -81,13 +88,35 @@ export const telemetryService = {
 
   async updateAlertRule(id: number, payload: AlertRulePayload) {
     const { data } = await api.put<AlertRule>(
-      `/api/telemetry/alert-rules/${id}/`,
+      `${SENSOR_ALERT_ENDPOINTS.ALERT_RULES}${id}/`,
       payload,
     );
     return data;
   },
 
   async deleteAlertRule(id: number) {
-    await api.delete(`/api/telemetry/alert-rules/${id}/`);
+    await api.delete(`${SENSOR_ALERT_ENDPOINTS.ALERT_RULES}${id}/`);
+  },
+
+  // ── Alert events ──
+  async getAlertEvents(params?: AlertEventQueryParams) {
+    const { data } = await api.get<SensorAlertEvent[]>(
+      SENSOR_ALERT_ENDPOINTS.ALERT_EVENTS,
+      { params },
+    );
+    return data;
+  },
+
+  async getAlertEvent(id: number | string) {
+    const { data } = await api.get<SensorAlertEvent>(alertEventPath(id));
+    return data;
+  },
+
+  async updateAlertEvent(
+    id: number | string,
+    payload: SensorAlertEventPayload,
+  ) {
+    const { data } = await api.patch<SensorAlertEvent>(alertEventPath(id), payload);
+    return data;
   },
 };

@@ -548,8 +548,8 @@ export interface AlertRule {
   id: number;
   sensor_id: string;
   name: string;
-  min_value: number;
-  max_value: number;
+  min_value: number | null;
+  max_value: number | null;
   severity: 'info' | 'warning' | 'critical';
   message: string;
   factory: number;
@@ -562,10 +562,47 @@ export interface AlertRule {
 export interface AlertRulePayload {
   sensor_id: string;
   name: string;
-  min_value: number;
-  max_value: number;
+  min_value: number | null;
+  max_value: number | null;
   severity: 'info' | 'warning' | 'critical';
   message: string;
   factory: number;
   is_active: boolean;
+}
+
+// ─────────────────────────────────────────
+// SENSOR ALERT EVENTS
+// ─────────────────────────────────────────
+
+/** Sensor alert event — returned by GET /api/telemetry/alert-events/ */
+export interface SensorAlertEvent {
+  id: number;
+  rule: number;
+  name_rule: string;
+  sensor_id: string;
+  value: number;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  triggered_at: string;
+  resolved_at: string | null;
+  resolved_value: number | null;
+  resolved_note: string | null;
+  is_active: boolean;
+  operator_note: string | null;
+  is_reviewed: boolean;
+  reviewed_by: string | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+}
+
+/** Payload for PATCH/PUT on an alert event (partial update) */
+export interface SensorAlertEventPayload {
+  operator_note?: string;
+  is_reviewed?: boolean;
+}
+
+/** Query parameters for GET /api/telemetry/alert-events/ */
+export interface AlertEventQueryParams {
+  sensor?: string;
+  only_active?: boolean;
 }
